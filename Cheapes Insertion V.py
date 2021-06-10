@@ -4,7 +4,7 @@ import networkx as nx                        #Libreria per costruire grafo
 from matplotlib import pyplot as plt
 import math
 from networkx.classes.function import neighbors  #TEST MARCELLO
-import numpy as np
+import numpy as np       #CIAO
 
 #LETTURA DEL FILE DI INPUT
 filename = 'FileInput.txt'      #nome file puntatore
