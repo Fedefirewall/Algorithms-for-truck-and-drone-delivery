@@ -10,9 +10,9 @@ import numpy as np
 #Ricerca del nodo più vicino 
 def nearest_node(neihgbourlist,lista_visitati):
     first_time=1
-    for i in range(0,len(neihgbourlist)):  
+    for i in range(1,len(neihgbourlist)):  
         #se la distanza non è zero e il nodo non è nella lista dei visitati
-        if(not(i+1 in lista_visitati)):
+        if(not(i in lista_visitati)):
             actual_value=neihgbourlist[i]
             actual_index=i
 
@@ -26,17 +26,17 @@ def nearest_node(neihgbourlist,lista_visitati):
                 min_index=actual_index
     return min_index
 
-def find_best_node(node1,node2,neihgbourlist,visited_list, dist_truck):
+def find_best_node(node1,node2,client_number_range,visited_list, dist_truck):
     first_time=1
        
-    for i in range(0,len(neihgbourlist)):  
+    for i in range(0,len(client_number_range)):  
          #se il nodo non è nella lista dei visitati
-        if(not(i+1 in lista_visitati)):
+        if(not(i+1 in visited_list)):
             #calcolo il costo di questo nodo, 
             #somma dell'arco tra nodo1 nodoX e somma dell' arco tra nodo2 e nodoX
             actual_value=(
-                dist_truck[neihgbourlist[i]]+dist_truck[node1]) + (
-                    dist_truck[neihgbourlist[i]]+dist_truck[node2])
+                dist_truck[dist_truck[i]]+dist_truck[node1]) + (
+                    dist_truck[dist_truck[i]]+dist_truck[node2])
             actual_index=i
 
             if(first_time):
@@ -51,7 +51,7 @@ def find_best_node(node1,node2,neihgbourlist,visited_list, dist_truck):
 
 
 #Creazione grafi
-Graph_truck_truck = nx.DiGraph()        
+Graph_truck = nx.DiGraph()        
 
 #LETTURA DEL FILE DI INPUT
 filename = 'File_Input_Truck.txt'      #nome file puntatore
@@ -76,7 +76,7 @@ for line in istance.readlines():
         coord_x = float(coord[1])
         coord_y = float(coord[2])
         points[index] = (coord_x, coord_y)
-        Graph_truck_truck.add_node(index, pos=(coord_x, coord_y))
+        Graph_truck.add_node(index, pos=(coord_x, coord_y))
 client_number=index
 client_number_range=client_number+1  
 istance.close()
@@ -133,7 +133,7 @@ for i in range(1, client_number_range):
 nearest_index = nearest_node(neihgbourlist, visited_list)
 
 print(nearest_index, "-->")
-Graph_truck_truck.add_edge(actual_node,nearest_index)
+Graph_truck.add_edge(actual_node,nearest_index)
 Cost += (dist[actual_node][nearest_index]*2)
 visited_list.append(nearest_index)
 actual_node=nearest_index
