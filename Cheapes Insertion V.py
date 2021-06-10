@@ -3,7 +3,7 @@ import re                                    #Libreria per leggere i file dati i
 import networkx as nx                        #Libreria per costruire grafo
 from matplotlib import pyplot as plt
 import math
-from networkx.classes.function import neighbors  #TEST MARCELLO
+from networkx.classes.function import neighbors  #TEST MARCE
 import numpy as np       #CIAO
 
 #LETTURA DEL FILE DI INPUT
