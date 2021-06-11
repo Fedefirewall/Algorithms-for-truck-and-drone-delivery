@@ -31,7 +31,7 @@ Grafo_drone = nx.DiGraph()
 Grafo_truck = nx.DiGraph()
 
 #----------INIZIO Lettura file nodi----------------
-filename = 'FileInput.txt'      #nome file puntatore
+filename = 'File_Input_Truck.txt'      #nome file puntatore
 istanza = open(filename, 'r')
 coord_section = False  
 points = {}

@@ -29,14 +29,12 @@ def nearest_node(neihgbourlist,lista_visitati):
 def find_best_node(node1,node2,client_number_range,visited_list, dist_truck):
     first_time=1
        
-    for i in range(0,len(client_number_range)):  
+    for i in range(1,client_number_range):  
          #se il nodo non è nella lista dei visitati
-        if(not(i+1 in visited_list)):
+        if(not(i in visited_list)):
             #calcolo il costo di questo nodo, 
             #somma dell'arco tra nodo1 nodoX e somma dell' arco tra nodo2 e nodoX
-            actual_value=(
-                dist_truck[dist_truck[i]]+dist_truck[node1]) + (
-                    dist_truck[dist_truck[i]]+dist_truck[node2])
+            actual_value=(dist_truck[i][node1]) + (dist_truck[i][node2])
             actual_index=i
 
             if(first_time):
@@ -134,6 +132,7 @@ nearest_index = nearest_node(neihgbourlist, visited_list)
 
 print(nearest_index, "-->")
 Graph_truck.add_edge(actual_node,nearest_index)
+Graph_truck.add_edge(nearest_index,actual_node)
 Cost += (dist[actual_node][nearest_index]*2)
 visited_list.append(nearest_index)
 actual_node=nearest_index
@@ -147,10 +146,8 @@ color_map=[]
 while(len(visited_list)<client_number):
     #per ogni coppia di nodi cerco il nodo con costo minore tale che la
     #somma dei nuovi archi sia minima
-    for node1 in Graph_truck:
-        for node2 in Graph_truck:
-            if ((node1 < node2)&(Graph_truck.has_edge(node1,node2))):
-                best_node_test=find_best_node(node1,node2,client_number_range,lista_visitati, dist_truck)
+    for node1,node2,a in Graph_truck.edges(data=True):
+        best_node_test=find_best_node(node1,node2,client_number_range,visited_list, dist_truck)
 
         
 
