@@ -8,12 +8,12 @@ import numpy as np
 
 
 #Ricerca del nodo più vicino 
-def nearest_node(neihgbourlist,lista_visitati):
+def nearest_node(neighbors_distance,lista_visitati):
     first_time=1
-    for i in range(1,len(neihgbourlist)):  
+    for i in range(1,len(neighbors_distance)):  
         #se la distanza non è zero e il nodo non è nella lista dei visitati
         if(not(i in lista_visitati)):
-            actual_value=neihgbourlist[i]
+            actual_value=neighbors_distance[i]
             actual_index=i
 
             if(first_time):
@@ -26,33 +26,51 @@ def nearest_node(neihgbourlist,lista_visitati):
                 min_index=actual_index
     return min_index
 
-def find_best_node(node1,node2,client_number_range,visited_list, dist_truck):
+def find_best_edge():
+    #per ogni coppia di nodi cerco il nodo con costo minore tale che la
+    #somma dei nuovi archi sia minima
+
+    #scorro gli archi
     first_time=1
-       
-    for i in range(1,client_number_range):  
-         #se il nodo non è nella lista dei visitati
-        if(not(i in visited_list)):
-            #calcolo il costo di questo nodo, 
-            #somma dell'arco tra nodo1 nodoX e somma dell' arco tra nodo2 e nodoX
-            actual_value=(dist_truck[i][node1]) + (dist_truck[i][node2])
-            actual_index=i
+    for node1,node2,attributes in Graph_truck.edges(data=True):
+        
+        #scorro i nodi
+        for i in range(1,client_number_range):  
+            #se il nodo non è nella lista dei visitati
+            if(not(i in visited_list)):
+                #calcolo il costo di questo nodo, 
+                #somma dell'arco tra nodo1 nodoX e somma dell' arco tra nodo2 e nodoX
+                new_edge_cost=(dist_truck[i][node1]) + (dist_truck[i][node2])
+                actual_index=i
+                old_edge_cost=dist_truck[node1][node2]
+                actual_cost=compute_solution_cost()-old_edge_cost+new_edge_cost
 
-            if(first_time):
-                min_value=actual_value
-                min_index=actual_index
-                first_time=0
+                if(first_time):
+                    min_index=actual_index
+                    cost_min=actual_cost
+                    node1_best=node1
+                    node2_best=node2                  
+                    first_time=0
 
-            if(actual_value<min_value):
-                min_value=actual_value
-                min_index=actual_index
-    return min_index
+                if(actual_cost<cost_min):
+                    cost_min=actual_cost
+                    min_index=actual_index
+                    node1_best=node1
+                    node2_best=node2 
 
+    return min_index,node1_best,node2_best;
 
+def compute_solution_cost():    
+    cost=0
+    for node1,node2,attributes in Graph_truck.edges(data=True):
+        cost+=dist_truck[node1][node2]
+    return cost
+    
 #Creazione grafi
 Graph_truck = nx.DiGraph()        
 
 #LETTURA DEL FILE DI INPUT
-filename = 'File_Input_Truck.txt'      #nome file puntatore
+filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
@@ -60,7 +78,7 @@ istance = open(filename, 'r')
 coord_section = False
 points = {}
 
-#Inizio lettura coordinate e inserimento nel grafo del truck
+#---------------Inizio lettura coordinate e inserimento nel grafo-------------
 for line in istance.readlines():
     if re.match('START.*', line):
         coord_section = True
@@ -79,16 +97,16 @@ client_number=index
 client_number_range=client_number+1  
 istance.close()
 
-#Inizializzo la matrice delle distanze 
+#Inizializzo la matrice delle distanze del drone
 dist = [ [ 0 for i in range(client_number_range) ] for j in range(client_number_range) ]
-#Calcolo le distanze e riempio la matrice 
+#Calcolo le distanze e riempio la matrice del drone
 for i in range(1,client_number_range):   
     for j in range(1,client_number_range):
         dist[i][j]=math.sqrt((points[j][0]-points[i][0])**2+(points[j][1]-points[i][1])**2)
 
 
 #----------Inizio Lettura file distanze truck----------------
-filename = 'FileInput1.txt'      #nome file puntatore
+filename = 'Distanze_TRUCK.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
@@ -114,48 +132,75 @@ istance.close()
 
 
 #Decido il nodo di partenza, ovvero il nostro deposito. 
-actual_node = 15
+starting_node = 15
 
 #Dichiaro la lista dei nodi visitati durante l'algoritmo
-visited_list = [actual_node]
+visited_list = [starting_node]
 
-Cost = 0    #Costo iniziale del veicolo
+cost = 0    #costo iniziale del veicolo
 
 #while(len(visited_list)<client_number):
     
-#Creo la lista dei vicini
-neihgbourlist = [0]
+#Creo la lista con le distanze dei vicini
+neighbors_distance = [0]
 for i in range(1, client_number_range): 
-    neihgbourlist.append(dist[actual_node][i])
-#Inserisco in nearest_index il nodo più vicino al actual_node
-nearest_index = nearest_node(neihgbourlist, visited_list)
+    neighbors_distance.append(dist[starting_node][i])
+#Inserisco in nearest_index il nodo più vicino all starting_node
+nearest_index = nearest_node(neighbors_distance, visited_list)
 
+#Aggiungo i primi 2 nodi
 print(nearest_index, "-->")
-Graph_truck.add_edge(actual_node,nearest_index)
-Graph_truck.add_edge(nearest_index,actual_node)
-Cost += (dist[actual_node][nearest_index]*2)
+Graph_truck.add_edge(starting_node,nearest_index,length=round(dist_truck[starting_node][nearest_index],2))
+Graph_truck.add_edge(nearest_index,starting_node,length=round(dist_truck[starting_node][nearest_index],2))
 visited_list.append(nearest_index)
-actual_node=nearest_index
-client_number -= 1
-print(Cost)
+###non credo serva aggiungere il nodo attuale###
+#actual_node=nearest_index
+clients_visited=client_number
+clients_visited -= 1
+print("Ora ho "+str(len(visited_list))+" nodi, con costo "+str(cost))
+#creo i colori dei nodi
 color_map=[]
+for node in Graph_truck:
+        if node == starting_node:
+            color_map.append('red')
+        else: 
+            color_map.append('green') 
 
-#primi due nodi aggiunti
+
 
 #inizio il ciclo
 while(len(visited_list)<client_number):
-    #per ogni coppia di nodi cerco il nodo con costo minore tale che la
-    #somma dei nuovi archi sia minima
-    for node1,node2,a in Graph_truck.edges(data=True):
-        best_node_test=find_best_node(node1,node2,client_number_range,visited_list, dist_truck)
+    #aggiungo l arco piu conveniente    
+    best_node_index,node1_best,node2_best=find_best_edge()
+
+    #Ora ho trovato il nodo con detour di costo minimo, 
+    #quindi lo aggiungo e rimuovo l edge corrispondente
+   
+    Graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2))
+    Graph_truck.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2))
+    Graph_truck.remove_edge(node1_best,node2_best)
+    visited_list.append(best_node_index)
+    print("Il nodo migliore e "+str(best_node_index)+" collegato ai nodi "+str(node1_best)+" e "+str(node2_best))
+    print("Ora ho "+str(len(visited_list))+" nodi")
+
+    cost=compute_solution_cost()
+    print("Il costo della solzuoen finale e "+str(cost))
+   # nx.draw(Graph_truck, points,node_color=color_map, node_size=100,with_labels=True, arrowsize=20)  #Creo il grafo con il tour
+    #pos = nx.get_node_attributes(Graph_truck, 'pos')
+    #nx.draw_networkx_edge_labels(Graph_truck, pos)
+  #  plt.show()          #Mostro il grafo
+  #  plt.clf()
+    
 
         
-
-
-for node in Graph_truck:
-    if node == actual_node:
-        color_map.append('red')
-    else: 
-        color_map.append('green') 
+cost=compute_solution_cost()
+print("Il costo della solzuoen finale e "+str(cost))
+# for node in Graph_truck:
+#     if node == starting_node:
+#         color_map.append('red')
+#     else: 
+#         color_map.append('green') 
 nx.draw(Graph_truck, points,node_color=color_map, node_size=100,with_labels=True, arrowsize=20)  #Creo il grafo con il tour
 plt.show()          #Mostro il grafo
+
+

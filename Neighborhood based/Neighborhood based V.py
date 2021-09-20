@@ -24,18 +24,25 @@ def piu_vicino(neihgbourlist,lista_visitati):
                 indice_minimo=indice_attuale
     return indice_minimo
 
-filename = 'FileInput.txt'      #nome file puntatore
+
+def compute_solution_cost():    
+    cost=0
+    for node1,node2,attributes in Graph_truck.edges(data=True):
+        cost+=dist_truck[node1][node2]
+    return cost
+
+#LETTURA DEL FILE DI INPUT
+filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
-istanza = open(filename, 'r')  
+istance = open(filename, 'r') 
 coord_section = False
 points = {}
 
-Grafo = nx.DiGraph()               #G sarà il nostro grafo
+Graph_truck = nx.DiGraph()               #G sarà il nostro grafo
 
-#Inizio lettura coordinate e inserimento nel grafo
-for line in istanza.readlines():
+for line in istance.readlines():
     if re.match('START.*', line):
         coord_section = True
         continue
@@ -44,59 +51,80 @@ for line in istanza.readlines():
 
     if coord_section:                                                 #CREAZIONE GRAFO
         coord = line.split(' ')
-        indice = int(coord[0])
+        index = int(coord[0])
         coord_x = float(coord[1])
         coord_y = float(coord[2])
-        points[indice] = (coord_x, coord_y)
-        Grafo.add_node(indice, pos=(coord_x, coord_y))
-numero_clienti=indice
-numero_clienti_range=numero_clienti+1  
-istanza.close()
+        points[index] = (coord_x, coord_y)
+        Graph_truck.add_node(index, pos=(coord_x, coord_y))
+client_number=index
+client_number_range=client_number+1  
+istance.close()
 
-dist = [ [ 0 for i in range(numero_clienti_range) ] for j in range(numero_clienti_range) ]
 
-#matrice delle distanze
-for i in range(1,numero_clienti_range):   
-    for j in range(1,numero_clienti_range):
-        dist[i][j]=math.sqrt((points[j][0]-points[i][0])**2+(points[j][1]-points[i][1])**2)
+#----------Inizio Lettura file distanze truck----------------
+filename = 'Distanze_TRUCK.txt'      #nome file puntatore
+with open(filename, 'r') as f:
+    data = f.read()
+
+istance = open(filename, 'r')  
+dist_section = False
+i=1
+dist_truck = [ [ 0 for i in range(client_number_range) ] for j in range(client_number_range) ]
+    #Inizio lettura coordinate e inserimento nel grafo
+for line in istance.readlines():
+    if re.match('START.*', line):
+        dist_section=True
+        continue
+    elif re.match('FINE.*', line):
+        break
+
+    #CREAZIONE matrice
+    if dist_section:   
+        coord = line.split(' ')
+        for j in range(0,client_number):
+            dist_truck[i][j+1] = float(coord[j])
+    i+=1
+istance.close()
+
 
 
 #decido il nodo di partenza
-random=10
+random=15
 nodo_attuale=random
 lista_visitati=[nodo_attuale]
-Costo=0
-while(len(lista_visitati)<numero_clienti):
+cost=0
+while(len(lista_visitati)<client_number):
     #creo la lista dei vicini
     neihgbourlist=[]
-    for i in range(1,numero_clienti_range):
-            neihgbourlist.append(dist[nodo_attuale][i])
+    for i in range(1,client_number_range):
+            neihgbourlist.append(dist_truck[nodo_attuale][i])
         
     # e ne trovo il più vicino
     indice_vicino=piu_vicino(neihgbourlist,lista_visitati)
 
     print(indice_vicino)
     #per stampare le distanze -> Grafo.add_edge(nodo_attuale,indice_vicino,length=dist[nodo_attuale][indice_vicino])
-    Grafo.add_edge(nodo_attuale,indice_vicino,)
-    Costo=Costo+dist[nodo_attuale][indice_vicino]
+    Graph_truck.add_edge(nodo_attuale,indice_vicino,)
+    cost=cost+dist_truck[nodo_attuale][indice_vicino]
     lista_visitati.append(indice_vicino)
     nodo_attuale=indice_vicino
 
 print("Scaricando l'istanza, creando il grafo")
 #aggiungo l'arco finale
-Grafo.add_edge(nodo_attuale,random,length=dist[nodo_attuale][random])
-Costo=Costo+dist[nodo_attuale][random]
-pos = nx.get_node_attributes(Grafo, 'pos')
+Graph_truck.add_edge(nodo_attuale,random,length=dist_truck[nodo_attuale][random])
+cost=cost+dist_truck[nodo_attuale][random]
+pos = nx.get_node_attributes(Graph_truck, 'pos')
 
 #setto colore grafo
 color_map=[]
-for node in Grafo:
+for node in Graph_truck:
     if node == random:
         color_map.append('red')
     else: 
         color_map.append('green') 
-nx.draw(Grafo, points,node_color=color_map, node_size=100,with_labels=True, arrowsize=20)  # create a graph with the tour
+nx.draw(Graph_truck, points,node_color=color_map, node_size=100,with_labels=True, arrowsize=20)  # create a graph with the tour
 #per stampare le distanze nx.draw_networkx_edge_labels(Grafo, pos)
-print("Costo=",Costo)
+cost=compute_solution_cost()
+print("Costo=",cost)
 
 plt.show()          # display it interactively

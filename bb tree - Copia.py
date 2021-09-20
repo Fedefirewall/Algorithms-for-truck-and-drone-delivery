@@ -1,4 +1,4 @@
-#Importazione librerie
+ #Importazione librerie
 #test git vscode
 import re #Libreria per leggere i file dati in input
 import networkx as nx #Libreria per costruire grafo
@@ -12,7 +12,7 @@ filename = 'FileInput.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
-instanza = open(filename, 'r')  
+istanza = open(filename, 'r')  
 coord_section = False
 points = {}
 
@@ -20,14 +20,14 @@ Grafo = nx.Graph()               #G sarà il nostro grafo
 
 #Inizio lettura coordinate e inserimento nel grafo
 
-for line in instanza.readlines():
+for line in istanza.readlines():
     if re.match('START.*', line):
         coord_section = True
         continue
     elif re.match('FINE.*', line):
         break
 
-    if coord_section:                                                 #CREAZIONE GRAFO
+    if coord_section:           #CREAZIONE GRAFO
         coord = line.split(' ')
         indice = int(coord[0])
         coord_x = float(coord[1])
@@ -36,7 +36,7 @@ for line in instanza.readlines():
         Grafo.add_node(indice, pos=(coord_x, coord_y))
 numero_clienti=indice
 numero_clienti_range=numero_clienti+1  
-instanza.close()
+istanza.close()
 
 dist = [ [ 0 for i in range(numero_clienti_range) ] for j in range(numero_clienti_range) ]
 
