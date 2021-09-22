@@ -67,8 +67,8 @@ def compute_solution_cost():
     return cost
     
 #Creazione grafi
-Graph_truck = nx.DiGraph()  
-Graph_drone = nx.DiGraph()      
+Graph_truck = nx.Graph()  
+Graph_drone = nx.Graph()      
 
 #LETTURA DEL FILE DI INPUT
 filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
@@ -151,35 +151,33 @@ nearest_index = nearest_node(neighbors_distance, visited_list)
 
 #Aggiungo i primi 2 nodi
 print(nearest_index, "-->")
-Graph_truck.add_edge(starting_node,nearest_index,length=round(dist_truck[starting_node][nearest_index],2))
-Graph_truck.add_edge(nearest_index,starting_node,length=round(dist_truck[starting_node][nearest_index],2))
+Graph_truck.add_edge(starting_node,nearest_index,length=round(dist_truck[starting_node][nearest_index],2),color='b')
+Graph_truck.add_edge(nearest_index,starting_node,length=round(dist_truck[starting_node][nearest_index],2),color='b')
 visited_list.append(nearest_index)
 ###non credo serva aggiungere il nodo attuale###
 #actual_node=nearest_index
 clients_visited=client_number
 clients_visited -= 1
 print("Ora ho "+str(len(visited_list))+" nodi, con costo "+str(cost))
-#creo i colori dei nodi
-color_map=[]
-for node in Graph_truck:
-        if node == starting_node:
-            color_map.append('red')
-        else: 
-            color_map.append('green') 
 
 
 
 #inizio il ciclo
+first_time=1
 while(len(visited_list)<client_number):
+    
     #aggiungo l arco piu conveniente    
     best_node_index,node1_best,node2_best=find_best_edge()
 
     #Ora ho trovato il nodo con detour di costo minimo, 
     #quindi lo aggiungo e rimuovo l edge corrispondente
    
-    Graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2))
-    Graph_truck.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2))
-    Graph_truck.remove_edge(node1_best,node2_best)
+    Graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='b')
+    Graph_truck.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2),color='b')
+    if(first_time):
+        first_time=0
+    else:
+        Graph_truck.remove_edge(node1_best,node2_best)
     visited_list.append(best_node_index)
     print("Il nodo migliore e "+str(best_node_index)+" collegato ai nodi "+str(node1_best)+" e "+str(node2_best))
     print("Ora ho "+str(len(visited_list))+" nodi")
@@ -196,25 +194,21 @@ while(len(visited_list)<client_number):
         
 
 
+#creo i colori dei nodi
+color_map=[]
+for node in Graph_truck:
+        if node == starting_node:
+            color_map.append('red')
+        else: 
+            color_map.append('green') 
+#colori degli archi aggiunti ogni volta vh faccio add edge
 
-#stampa grafi
-plt.figure(1)
-nx.draw_networkx_edges(Graph_truck, points, arrowsize=20)  # create a graph with the tour  # create a graph with the tour
-
-plt.figure(2)
-edges_drone = Graph_drone.edges()
-#label = nx.get_node_attributes(Graph_drone, 'label') 
-colors = [Graph_drone[u][v]['color'] for u,v in edges_drone]
-#nx.draw(Graph_drone,points,labels=label,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
-nx.draw(Graph_drone,points,font_size=10, node_size=100,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)
-plt.figure(3)
-G3 = nx.compose(Graph_drone, Graph_truck)
-edges = G3.edges()
-colors = [G3[u][v]['color'] for u,v in edges]
-#nx.draw(G3,points, labels=label,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
-nx.draw(G3,points,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
+Graph_total = nx.compose(Graph_drone, Graph_truck)
+edges = Graph_total.edges()
+colors = [Graph_total[u][v]['color'] for u,v in edges]
+nx.draw(Graph_total,points,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
 #per stampare le distanze nx.draw_networkx_edge_labels(Grafo, pos)
-print("Costo=",Costo)
+print("Costo=",cost)
 
 plt.show()          # display it interactively
 

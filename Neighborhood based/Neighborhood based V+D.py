@@ -268,22 +268,23 @@ for node in Grafo_drone:
         color_map.append('green') 
      
 
-#stampa grafi
+#STAMPA GRAFI
 #plt.figure(1)
-nx.draw_networkx_edges(Grafo_truck, points, arrowsize=20)  # create a graph with the tour  # create a graph with the tour
+#edges_truck = Grafo_truck.edges()
+#colors = [Grafo_truck[u][v]['color'] for u,v in edges_truck]
+#nx.draw_networkx_edges(Grafo_truck, points, arrowsize=20,edge_color=colors)  # create a graph with the tour  # create a graph with the tour
 
 #plt.figure(2)
-edges_drone = Grafo_drone.edges()
+#edges_drone = Grafo_drone.edges()
 #label = nx.get_node_attributes(Grafo_drone, 'label') 
-colors = [Grafo_drone[u][v]['color'] for u,v in edges_drone]
-#nx.draw(Grafo_drone,points,labels=label,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
-nx.draw(Grafo_drone,points,font_size=10, node_size=100,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)
+#colors = [Grafo_drone[u][v]['color'] for u,v in edges_drone]
+#nx.draw(Grafo_drone,points,font_size=10, node_size=100,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)
+
 #plt.figure(3)
-G3 = nx.compose(Grafo_drone, Grafo_truck)
-edges = G3.edges()
-colors = [G3[u][v]['color'] for u,v in edges]
-#nx.draw(G3,points, labels=label,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
-nx.draw(G3,points,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
+Graph_total = nx.compose(Grafo_drone, Grafo_truck)
+edges = Graph_total.edges()
+colors = [Graph_total[u][v]['color'] for u,v in edges]
+nx.draw(Graph_total,points,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
 #per stampare le distanze nx.draw_networkx_edge_labels(Grafo, pos)
 print("Costo=",Costo)
 
