@@ -26,13 +26,13 @@ def nearest_node(neighbors_distance,lista_visitati):
                 min_index=actual_index
     return min_index
 
-def find_best_edge():
+def find_best_edge(dist):
     #per ogni coppia di nodi cerco il nodo con costo minore tale che la
     #somma dei nuovi archi sia minima
 
     #scorro gli archi
     first_time=1
-    for node1,node2,attributes in Graph_truck.edges(data=True):
+    for node1,node2,attributes in graph_truck.edges(data=True):
         
         #scorro i nodi
         for i in range(1,client_number_range):  
@@ -40,10 +40,10 @@ def find_best_edge():
             if(not(i in visited_list)):
                 #calcolo il costo di questo nodo, 
                 #somma dell'arco tra nodo1 nodoX e somma dell' arco tra nodo2 e nodoX
-                new_edge_cost=(dist_truck[i][node1]) + (dist_truck[i][node2])
+                new_edge_cost=(dist[i][node1]) + (dist[i][node2])
                 actual_index=i
-                old_edge_cost=dist_truck[node1][node2]
-                actual_cost=compute_solution_cost()-old_edge_cost+new_edge_cost
+                old_edge_cost=dist[node1][node2]
+                actual_cost=compute_solution_cost(dist)-old_edge_cost+new_edge_cost
 
                 if(first_time):
                     min_index=actual_index
@@ -60,15 +60,15 @@ def find_best_edge():
 
     return min_index,node1_best,node2_best;
 
-def compute_solution_cost():    
+def compute_solution_cost(dist):    
     cost=0
-    for node1,node2,attributes in Graph_truck.edges(data=True):
-        cost+=dist_truck[node1][node2]
+    for node1,node2,attributes in graph_truck.edges(data=True):
+        cost+=dist[node1][node2]
     return cost
     
 #Creazione grafi
-Graph_truck = nx.Graph()  
-Graph_drone = nx.Graph()      
+graph_truck = nx.Graph()  
+graph_drone = nx.Graph()      
 
 #LETTURA DEL FILE DI INPUT
 filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
@@ -93,7 +93,7 @@ for line in istance.readlines():
         coord_x = float(coord[1])
         coord_y = float(coord[2])
         points[index] = (coord_x, coord_y)
-        Graph_truck.add_node(index, pos=(coord_x, coord_y))
+        graph_truck.add_node(index, pos=(coord_x, coord_y))
 client_number=index
 client_number_range=client_number+1  
 istance.close()
@@ -139,7 +139,11 @@ starting_node = 15
 visited_list = [starting_node]
 
 cost = 0    #costo iniziale del veicolo
-
+drone_on_truck=1
+clients_visited_drone=0
+drone_autonomy=25
+capacity=150
+actual_drone_autonomy=drone_autonomy
 #while(len(visited_list)<client_number):
     
 #Creo la lista con le distanze dei vicini
@@ -149,44 +153,48 @@ for i in range(1, client_number_range):
 #Inserisco in nearest_index il nodo più vicino all starting_node
 nearest_index = nearest_node(neighbors_distance, visited_list)
 
-#Aggiungo i primi 2 nodi
-print(nearest_index, "-->")
-Graph_truck.add_edge(starting_node,nearest_index,length=round(dist_truck[starting_node][nearest_index],2),color='b')
-Graph_truck.add_edge(nearest_index,starting_node,length=round(dist_truck[starting_node][nearest_index],2),color='b')
-visited_list.append(nearest_index)
-###non credo serva aggiungere il nodo attuale###
-#actual_node=nearest_index
-clients_visited=client_number
-clients_visited -= 1
-print("Ora ho "+str(len(visited_list))+" nodi, con costo "+str(cost))
 
 
 
-#inizio il ciclo
+
+#inizio il ciclo esterno del truck
 first_time=1
 while(len(visited_list)<client_number):
-    
-    #aggiungo l arco piu conveniente    
-    best_node_index,node1_best,node2_best=find_best_edge()
-
-    #Ora ho trovato il nodo con detour di costo minimo, 
-    #quindi lo aggiungo e rimuovo l edge corrispondente
+    #1 caso: il drone non si è mosso
+    if(clients_visited_drone==0):
+        #Aggiungo i primi 2 nodi
+        graph_drone.add_edge(starting_node,nearest_index,length=round(dist_truck[starting_node][nearest_index],2),color='b')
+        visited_list.append(nearest_index)
+        clients_visited += 1
+        clients_visited_drone += 1
+    #2 caso, il drone si è spostato una volta
+    if(clients_visited_drone==1):
+        #controllo se il drone può fare solo un nodo
+        #aggiungo l arco piu conveniente    
+        best_node_index,node1_best,node2_best=find_best_edge()
+        costo_drone=compute_solution_cost(dist_drone)
+        #Ora ho trovato il nodo con detour di costo minimo, 
+        #quindi lo aggiungo e rimuovo l edge corrispondente
    
-    Graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='b')
-    Graph_truck.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2),color='b')
-    if(first_time):
-        first_time=0
-    else:
-        Graph_truck.remove_edge(node1_best,node2_best)
-    visited_list.append(best_node_index)
+        graph_drone.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='b')
+        graph_drone.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2),color='b')
+        visited_list.append(best_node_index)
+        #se il costo è maggiore della autonomia rimuovo l arco fatto e mando il truck,
+        #altrimenti proseguo
+        cost_route1=compute_solution_cost(dist_drone)-dist_drone[node1_best][]
+        cost_route2=
+
+        if(costo_drone<=)
+
+    
     print("Il nodo migliore e "+str(best_node_index)+" collegato ai nodi "+str(node1_best)+" e "+str(node2_best))
     print("Ora ho "+str(len(visited_list))+" nodi")
 
-    cost=compute_solution_cost()
+    cost=compute_solution_cost(dist_truck)
     print("Il costo della solzuoen finale e "+str(cost))
-   # nx.draw(Graph_truck, points,node_color=color_map, node_size=100,with_labels=True, arrowsize=20)  #Creo il grafo con il tour
-    #pos = nx.get_node_attributes(Graph_truck, 'pos')
-    #nx.draw_networkx_edge_labels(Graph_truck, pos)
+   # nx.draw(graph_truck, points,node_color=color_map, node_size=100,with_labels=True, arrowsize=20)  #Creo il grafo con il tour
+    #pos = nx.get_node_attributes(graph_truck, 'pos')
+    #nx.draw_networkx_edge_labels(graph_truck, pos)
   #  plt.show()          #Mostro il grafo
   #  plt.clf()
     
@@ -196,14 +204,14 @@ while(len(visited_list)<client_number):
 
 #creo i colori dei nodi
 color_map=[]
-for node in Graph_truck:
+for node in graph_truck:
         if node == starting_node:
             color_map.append('red')
         else: 
             color_map.append('green') 
 #colori degli archi aggiunti ogni volta vh faccio add edge
 
-Graph_total = nx.compose(Graph_drone, Graph_truck)
+Graph_total = nx.compose(graph_drone, graph_truck)
 edges = Graph_total.edges()
 colors = [Graph_total[u][v]['color'] for u,v in edges]
 nx.draw(Graph_total,points,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
