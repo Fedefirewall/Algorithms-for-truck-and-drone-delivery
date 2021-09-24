@@ -231,6 +231,7 @@ while(len(lista_visitati)<numero_clienti):
                     lista_visitati.append(indice_vicino)
     
     #controllo che nell' ultimo nodo il truck arrivi prima del drone
+    #non ce piu.. perche? forse abbiamo supposto la disuguglianza triangolare
         
     #infine ricarica drone
     Autonomia_drone_attuale=Autonomia_drone
