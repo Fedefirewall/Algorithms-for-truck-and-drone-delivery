@@ -10,7 +10,7 @@ from time import sleep
 import random
 
 
-filename = 'FileInput.txt'      #nome file puntatore
+filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
@@ -27,7 +27,7 @@ for line in istanza.readlines():
     elif re.match('FINE.*', line):
         break
 
-    if coord_section:                                                 #CREAZIONE GRAFO
+    if coord_section:                                              
         coord = line.split(' ')
         indice = int(coord[0])
         coord_x = float(coord[1])
@@ -47,7 +47,7 @@ for i in range(1,numero_clienti_range):
         dist[i][j]=math.sqrt((points[j][0]-points[i][0])**2+(points[j][1]-points[i][1])**2)
         DistDrone = str(dist[i][j])
  
-FileInputVeicolo = open("FileInput1.txt", "w") 
+FileInputVeicolo = open("Distanze_TRUCK.txt", "w") 
 FileInputVeicolo.write("START\n") 
 #matrice distanze per Veicolo
 for i in range(1,numero_clienti_range):   
