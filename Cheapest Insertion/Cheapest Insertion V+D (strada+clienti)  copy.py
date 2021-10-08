@@ -326,7 +326,7 @@ graph_truck=clear_graph_truck.copy()
 graph_drone=clear_graph_drone.copy()
 
 #Decido il nodo di partenza, ovvero il nostro deposito. 
-starting_node = 29
+starting_node = 20
 drone_autonomy=35
 capacity=100
 inputs=[w/10 for w in range(-50,50,1)]
