@@ -26,9 +26,16 @@ def piu_vicino(neihgbourlist,lista_visitati):
                 indice_minimo=indice_attuale
     return indice_minimo
 
+def compute_solution_cost(dist):    
+    cost=0
+    for node1,node2,attributes in graph_truck.edges(data=True):
+        cost+=dist[node1][node2] 
+    return cost
+
+
 #Grafi
-Grafo_drone = nx.DiGraph()
-Grafo_truck = nx.DiGraph()
+graph_drone = nx.DiGraph()
+graph_truck = nx.DiGraph()
 
 #----------INIZIO Lettura file nodi----------------
 filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
@@ -55,8 +62,8 @@ for line in istanza.readlines():
         lista_pesi_pacchi.append(peso)
         points[indice] = (coord_x, coord_y)
         #label=str(indice)+":"+str(peso)
-        #Grafo_drone.add_node(indice,label=label, pos=(coord_x, coord_y))
-        Grafo_drone.add_node(indice, pos=(coord_x, coord_y))
+        #graph_drone.add_node(indice,label=label, pos=(coord_x, coord_y))
+        graph_drone.add_node(indice, pos=(coord_x, coord_y))
 
         
 numero_clienti=indice
@@ -99,22 +106,21 @@ istanza.close()
 #dist_truck[25][12]=3000
 #dist_truck[25][13]=5
 #decido il nodo di partenza
-random=3
-lista_pesi_pacchi[random]=0
+starting_node=29
+lista_pesi_pacchi[starting_node]=0
 
 #setto il peso del deposito=0
-#label=str(random)+":"+str(0)
-#nx.set_node_attributes(Grafo_drone ,{random:str(label)},'label' )
+#label=str(starting_node)+":"+str(0)
+#nx.set_node_attributes(graph_drone ,{starting_node:str(label)},'label' )
 
 #random.randint(0,30)
-nodo_attuale_truck=random
-nodo_attuale_drone=random
-lista_visitati=[random]
-Costo=0
+nodo_attuale_truck=starting_node
+nodo_attuale_drone=starting_node
+lista_visitati=[starting_node]
 Drone_on_truck=1
 Drone_spostato=0
-Autonomia_drone=25
-Capacita=150
+Autonomia_drone=35
+Capacita=15000000000
 Autonomia_drone_attuale=Autonomia_drone
 #ciclo esterno , quando esco aggiungo solo l'arco finale e stampo
 while(len(lista_visitati)<numero_clienti):
@@ -156,7 +162,7 @@ while(len(lista_visitati)<numero_clienti):
         if((Autonomia_drone_attuale>=0)&(Peso_trasportato_attuale<=Capacita)):
             Drone_on_truck=0
             Drone_spostato=1
-            Grafo_drone.add_edge(nodo_attuale_drone,indice_vicino,color='blue')
+            graph_drone.add_edge(nodo_attuale_drone,indice_vicino,color='blue')
             Drone_percorso_test.append(indice_vicino)
             Movimenti_drone+=1
             Costo_drone+=dist_drone[nodo_attuale_drone][indice_vicino]
@@ -170,7 +176,7 @@ while(len(lista_visitati)<numero_clienti):
         else:
             # 1 il drone si è spostao ed è riusciuto a fare solo un movimento → annullo il movimento
             if((Movimenti_drone<=1)&(Drone_spostato)):
-                Grafo_drone.remove_edge(nodo_attuale_truck,nodo_attuale_drone)
+                graph_drone.remove_edge(nodo_attuale_truck,nodo_attuale_drone)
                 Drone_spostato=0
                 nodo_attuale_drone=nodo_attuale_truck
                 lista_visitati.remove(indice_vicino_precedente)
@@ -196,7 +202,7 @@ while(len(lista_visitati)<numero_clienti):
                         Penultimo_nodo_drone=nodo_attuale_truck
                         Drone_on_truck=1
                         Drone_spostato=0
-                    Grafo_drone.remove_edge(Penultimo_nodo_drone,Ultimo_nodo_drone)
+                    graph_drone.remove_edge(Penultimo_nodo_drone,Ultimo_nodo_drone)
                     nodo_attuale_drone=Penultimo_nodo_drone
                     lista_visitati.remove(Ultimo_nodo_drone)
                     Drone_percorso_test.remove(Ultimo_nodo_drone)
@@ -205,9 +211,8 @@ while(len(lista_visitati)<numero_clienti):
 
                 #se non ho annullato tutte le mosse e il drone si è spostato
                 if(Drone_spostato):
-                    Grafo_truck.add_edge(nodo_attuale_truck,nodo_attuale_drone,color='r')
+                    graph_truck.add_edge(nodo_attuale_truck,nodo_attuale_drone,color='r')
                     nodo_attuale_truck=nodo_attuale_drone
-                    Costo+=dist_truck[nodo_attuale_truck][nodo_attuale_drone]
                     Drone_on_truck=1
                     if(not(nodo_attuale_drone in lista_visitati)):
                         lista_visitati.append(nodo_attuale_drone)
@@ -224,21 +229,20 @@ while(len(lista_visitati)<numero_clienti):
                 # e ne trovo il più vicino
                 indice_vicino=piu_vicino(neihgbourlist,lista_visitati)
                 #endregion
-                Grafo_truck.add_edge(nodo_attuale_truck,indice_vicino,color='r')
-                Costo+=dist_truck[nodo_attuale_truck][indice_vicino]
+                graph_truck.add_edge(nodo_attuale_truck,indice_vicino,color='r')
                 Drone_on_truck=1 
                 if(not(indice_vicino in lista_visitati)):
                     lista_visitati.append(indice_vicino)
     
     #controllo che nell' ultimo nodo il truck arrivi prima del drone
+    #non ce piu.. perche? forse abbiamo supposto la disuguglianza triangolare
         
     #infine ricarica drone
     Autonomia_drone_attuale=Autonomia_drone
 
     #Qua sto uscnedo dal ciclo con l'ultino cliente servito dal drone
     if((not(len(lista_visitati)<30))&(Drone_on_truck==0)):
-        Grafo_truck.add_edge(nodo_attuale_truck,nodo_attuale_drone,color='r')
-        Costo+=dist_truck[nodo_attuale_truck][indice_vicino]
+        graph_truck.add_edge(nodo_attuale_truck,nodo_attuale_drone,color='r')
         Drone_on_truck=1 
         if(not(indice_vicino in lista_visitati)):
             lista_visitati.append(indice_vicino)
@@ -249,42 +253,44 @@ while(len(lista_visitati)<numero_clienti):
         nodo_attuale_drone=nodo_attuale_truck
     Drone_spostato=0
     len_lista=len(lista_visitati)
-    print("indici visitati:",len_lista)
+    #print("indici visitati:",len_lista)
  
 
 
 print("Scaricando l'istanza, creando il grafo")
 #aggiungo l'arco finale
-Grafo_truck.add_edge(nodo_attuale_truck,random,color='r')
-Costo=Costo+dist_truck[nodo_attuale_truck][random]
-pos = nx.get_node_attributes(Grafo_drone, 'pos')
+graph_truck.add_edge(nodo_attuale_truck,starting_node,color='r')
+pos = nx.get_node_attributes(graph_drone, 'pos')
 
 #setto colore grafo
 color_map=[]
-for node in Grafo_drone:
-    if node == random:
+for node in graph_drone:
+    if node == starting_node:
         color_map.append('red')
     else: 
         color_map.append('green') 
      
 
-#stampa grafi
+#STAMPA GRAFI
 #plt.figure(1)
-nx.draw_networkx_edges(Grafo_truck, points, arrowsize=20)  # create a graph with the tour  # create a graph with the tour
+#edges_truck = graph_truck.edges()
+#colors = [graph_truck[u][v]['color'] for u,v in edges_truck]
+#nx.draw_networkx_edges(graph_truck, points, arrowsize=20,edge_color=colors)  # create a graph with the tour  # create a graph with the tour
 
 #plt.figure(2)
-edges_drone = Grafo_drone.edges()
-#label = nx.get_node_attributes(Grafo_drone, 'label') 
-colors = [Grafo_drone[u][v]['color'] for u,v in edges_drone]
-#nx.draw(Grafo_drone,points,labels=label,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
-nx.draw(Grafo_drone,points,font_size=10, node_size=100,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)
+#edges_drone = graph_drone.edges()
+#label = nx.get_node_attributes(graph_drone, 'label') 
+#colors = [graph_drone[u][v]['color'] for u,v in edges_drone]
+#nx.draw(graph_drone,points,font_size=10, node_size=100,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)
+
 #plt.figure(3)
-G3 = nx.compose(Grafo_drone, Grafo_truck)
-edges = G3.edges()
-colors = [G3[u][v]['color'] for u,v in edges]
-#nx.draw(G3,points, labels=label,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
-nx.draw(G3,points,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
+Graph_total = nx.compose(graph_drone, graph_truck)
+edges = Graph_total.edges()
+colors = [Graph_total[u][v]['color'] for u,v in edges]
+nx.draw(Graph_total,points,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
 #per stampare le distanze nx.draw_networkx_edge_labels(Grafo, pos)
-print("Costo=",Costo)
+cost=compute_solution_cost(dist_truck)
+print("nodo di partenza="+str(starting_node))
+print("costo=",cost)
 
 plt.show()          # display it interactively
