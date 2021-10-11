@@ -181,7 +181,7 @@ def find_best_drone_route(cost_routes):
     else:
         return cost_routes[1]
 
-def drone_Cristofides_trip():
+def drone_Cheapest_trip():
     global visited_list_indexes
     best_trip_score=0
     first_time=1
@@ -408,7 +408,7 @@ for alpha in inputs:
 
         #CICLO DEL DRONE
         if(len(visited_list_indexes)<client_number):
-            drone_Cristofides_trip()
+            drone_Cheapest_trip()
 
         cost=compute_solution_cost(dist_truck)
 
@@ -505,7 +505,7 @@ while(len(visited_list_indexes)<client_number):
 
     #CICLO DEL DRONE
     if(len(visited_list_indexes)<client_number):
-        drone_Cristofides_trip()
+        drone_Cheapest_trip()
 
     cost=compute_solution_cost(dist_truck)
 
