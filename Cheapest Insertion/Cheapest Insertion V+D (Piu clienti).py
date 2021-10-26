@@ -170,6 +170,15 @@ def compute_drone_cost_new(trip_number):
             #print(node1,node2,dist_drone[node1][node2],cost)
     return cost
 
+def compute_drone_weight(trip_number):
+    weight=0
+    #per ogni nodo controllo se e stato visitato in questo ciclo
+    visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==trip_number]
+    for node in visited_list_drone_this_trip:
+        if node not in visited_list_truck_indexes:
+            weight+=weights_dict[node]
+    return weight
+
 def revert_this_trip(trip_number):
     global visited_list_drone
     global visited_list_indexes
@@ -178,10 +187,8 @@ def revert_this_trip(trip_number):
         # controllo se entrambi i 2 nodi sono stati visitati in questo ciclo
         if ((any(x.index == node1 and x.trip_number==trip_number for x in visited_list_drone)) and (any(y.index == node2  and y.trip_number==trip_number for y in visited_list_drone))):  
             graph_drone.custom_remove_edge(node1,node2)
-        if (len(graph_drone.edges(node1))==0):
-            visited_list_drone = [node for node in visited_list_drone if node.index!=node1]
-        if (len(graph_drone.edges(node2))==0):
-            visited_list_drone = [node for node in visited_list_drone if node.index!=node2]
+    
+    visited_list_drone = [node for node in visited_list_drone if node.trip_number!=trip_number]
 
     visited_list_indexes=compute_visited_list()
 
@@ -195,12 +202,13 @@ def find_best_drone_route(cost_routes):
     else:
         return cost_routes[1]
 
-def drone_Cristofides_trip():
+def drone_Cheapest_trip():
     global visited_list_indexes
     best_trip_score=0
+    first_time=1
     global drone_trip_counter
     trip_counter_best=0
-    #prendo tutti gli archi disponibili nel percorso del truck e vedo quello ceh fa percorrere piu strada al drone
+    #prendo tutti gli archi disponibili nel percorso del truck e con fitness migliore(client +cost*alpha)
     for node1,node2 in graph_truck.edges:
         if([node1,node2] not in truck_locked_edges):
             graph_drone.add_edge(node1,node2,length=round(dist_drone[node1][node2],2),color='#97E5FF')
@@ -208,35 +216,49 @@ def drone_Cristofides_trip():
             visited_list_drone.append(Visited_node_drone(node2,drone_trip_counter))
 
             cost=compute_drone_cost_new(drone_trip_counter)
+            weight=compute_drone_weight(drone_trip_counter)
 
-            while(cost<=drone_autonomy and len(visited_list_indexes)<client_number):
+            while(cost<=drone_autonomy and weight<=drone_capacity and len(visited_list_indexes)<client_number):
                 best_node_index,node1_start,node2_start=find_best_edge(graph_drone,dist_drone,drone_trip_counter)
                 #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
-                #quindi lo aggiungo e rimuovo l edge corrispondente
-                graph_drone.add_edge(best_node_index,node1_start,length=round(dist_drone[best_node_index][node1_start],2),color='#97E5FF')
-                graph_drone.add_edge(best_node_index,node2_start,length=round(dist_drone[best_node_index][node2_start],2),color='#97E5FF')
-                visited_list_indexes=compute_visited_list()
-                visited_list_drone.append(Visited_node_drone(best_node_index,drone_trip_counter))
-                # conto quanti clienti sta servendo il drone in questo viaggio
-                visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==drone_trip_counter]
-                sub_clients_counter=len(visited_list_drone_this_trip)
-                #lo rimuovo in ogni caso cosi risolvo il rpoblema dell arco obbligatorio
-                graph_drone.custom_remove_edge(node1_start,node2_start)
-                cost=compute_drone_cost_new(drone_trip_counter)
+                #quindi lo aggiungo e rimuovo l edge corrispondente SOLO SE NON SUPERO I VINCOLI
+                weight=compute_drone_cost_new(drone_trip_counter)+weights_dict[best_node_index]
+                new_edge_cost=(dist_drone[best_node_index][node1_start]) + (dist_drone[best_node_index][node2_start])
+                old_edge_cost=dist_drone[node1_start][node2_start]
+                cost=compute_drone_cost_new(drone_trip_counter)-old_edge_cost+new_edge_cost
+
+                if(weight<=drone_capacity and cost<=drone_autonomy):
+                    graph_drone.add_edge(best_node_index,node1_start,length=round(dist_drone[best_node_index][node1_start],2),color='#97E5FF')
+                    graph_drone.add_edge(best_node_index,node2_start,length=round(dist_drone[best_node_index][node2_start],2),color='#97E5FF')
+                    visited_list_indexes=compute_visited_list()
+                    visited_list_drone.append(Visited_node_drone(best_node_index,drone_trip_counter))
+                    # conto quanti clienti sta servendo il drone in questo viaggio
+                    visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==drone_trip_counter]
+                    sub_clients_counter=len(visited_list_drone_this_trip)
+                    #lo rimuovo in ogni caso cosi risolvo il rpoblema dell arco obbligatorio
+                    graph_drone.custom_remove_edge(node1_start,node2_start)
+                    #print_graph_for_debug()
+                    cost=compute_drone_cost_new(drone_trip_counter)
+                    weight=compute_drone_weight(drone_trip_counter)
+                
 
             visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==drone_trip_counter]
             cost=compute_drone_cost_new(drone_trip_counter)
+            weight=compute_drone_weight(drone_trip_counter)
+            
             trip_score=len(visited_list_drone_this_trip)
-            #print_graph_for_debug()
+        
             #se ho trovato un perocorso migliore me lo salvo
-            if trip_score>best_trip_score:
+            #print_graph_for_debug()
+            if trip_score>best_trip_score or first_time:
                 best_trip_score=trip_score
                 node1_start_best=node1
                 node2_start_best=node2
                 trip_counter_best=drone_trip_counter
+                first_time=0
 
-            revert_this_trip(drone_trip_counter)
             #print_graph_for_debug()
+            revert_this_trip(drone_trip_counter)          
             drone_trip_counter+=1
         
     #ora che ho trovato il migliore lo confermo
@@ -244,23 +266,33 @@ def drone_Cristofides_trip():
     visited_list_drone.append(Visited_node_drone(node1_start_best,trip_counter_best))
     visited_list_drone.append(Visited_node_drone(node2_start_best,trip_counter_best))
     cost=compute_drone_cost_new(trip_counter_best)
+    weight=compute_drone_weight(trip_counter_best)
     #e blocco l arco del truck
     truck_locked_edges.append([node1_start_best,node2_start_best])
 
-    while(cost<=drone_autonomy and len(visited_list_indexes)<client_number):
+
+    #ripercorro il ciclo best
+    while(cost<=drone_autonomy and weight<=drone_capacity and len(visited_list_indexes)<client_number):
         best_node_index,node1_start_best,node2_start_best=find_best_edge(graph_drone,dist_drone,trip_counter_best)
         #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
-        #quindi lo aggiungo e rimuovo l edge corrispondente
-        graph_drone.add_edge(best_node_index,node1_start_best,length=round(dist_drone[best_node_index][node1_start_best],2),color='b')
-        graph_drone.add_edge(best_node_index,node2_start_best,length=round(dist_drone[best_node_index][node2_start_best],2),color='b')
-        visited_list_indexes=compute_visited_list()
-        visited_list_drone.append(Visited_node_drone(best_node_index,trip_counter_best))
-        # conto quanti clienti sta servendo il drone in questo viaggio
-        visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==trip_counter_best]
-        sub_clients_counter=len(visited_list_drone_this_trip)
-        #lo rimuovo in ogni caso cosi risolvo il rpoblema dell arco obbligatorio
-        graph_drone.custom_remove_edge(node1_start_best,node2_start_best)
-        cost=compute_drone_cost_new(trip_counter_best)    
+        #quindi lo aggiungo e rimuovo l edge corrispondente SOLO SE NON SUPERO I VINCOLI
+        weight=compute_drone_cost_new(drone_trip_counter)+weights_dict[best_node_index]
+        new_edge_cost=(dist_drone[best_node_index][node1_start]) + (dist_drone[best_node_index][node2_start])
+        old_edge_cost=dist_drone[node1_start][node2_start]
+        cost=compute_drone_cost_new(drone_trip_counter)-old_edge_cost+new_edge_cost
+
+        if(weight<=drone_capacity and cost<=drone_autonomy):
+            graph_drone.add_edge(best_node_index,node1_start_best,length=round(dist_drone[best_node_index][node1_start_best],2),color='b')
+            graph_drone.add_edge(best_node_index,node2_start_best,length=round(dist_drone[best_node_index][node2_start_best],2),color='b')
+            visited_list_indexes=compute_visited_list()
+            visited_list_drone.append(Visited_node_drone(best_node_index,trip_counter_best))
+            # conto quanti clienti sta servendo il drone in questo viaggio
+            visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==trip_counter_best]
+            sub_clients_counter=len(visited_list_drone_this_trip)
+            #lo rimuovo in ogni caso cosi risolvo il rpoblema dell arco obbligatorio
+            graph_drone.custom_remove_edge(node1_start_best,node2_start_best)
+            cost=compute_drone_cost_new(trip_counter_best)    
+            weight=compute_drone_weight(trip_counter_best)
             
     #print_graph_for_debug()
     return node1_start_best,node2_start_best
@@ -278,7 +310,7 @@ with open(filename, 'r') as f:
 istance = open(filename, 'r')  
 coord_section = False
 points = {}
-
+weights_dict = {}
 
 for line in istance.readlines():
     if re.match('START.*', line):
@@ -293,6 +325,8 @@ for line in istance.readlines():
         coord_x = float(coord[1])
         coord_y = float(coord[2])
         points[index] = (coord_x, coord_y)
+        weight= float(coord[3])
+        weights_dict[index]=weight
         graph_truck.add_node(index, pos=(coord_x, coord_y))
 client_number=index
 client_number_range=client_number+1  
@@ -333,7 +367,9 @@ for line in istance.readlines():
 istance.close()
 
 #Decido il nodo di partenza, ovvero il nostro deposito. 
-starting_node = 20
+starting_node = 27
+drone_autonomy=35
+drone_capacity=200
 truck_node_index = starting_node
 
 #Dichiaro la lista dei nodi visitati durante l'algoritmo
@@ -343,8 +379,7 @@ visited_list_truck_indexes = [starting_node]
 
 cost = 0    #costo iniziale del veicolo
 drone_on_truck=1
-drone_autonomy=35
-capacity=100
+
 
 visited_list_drone=[]
 truck_locked_edges=[]
@@ -372,11 +407,11 @@ visited_list_indexes=compute_visited_list()
 #ciclo esterno del truck
 first_time=1
 last_node=0
-drone_trip_counter=0
+
 while(len(visited_list_indexes)<client_number):
-    drone_trip_counter+=1
+
     sub_clients_counter=0
-    drone_autonomy_temp=drone_autonomy
+
     drone_returned=False
 
     #CHEAPEST INSERTION TRUCK
@@ -397,7 +432,7 @@ while(len(visited_list_indexes)<client_number):
 
     #CICLO DEL DRONE
     if(len(visited_list_indexes)<client_number):
-        drone_Cristofides_trip()
+        drone_Cheapest_trip()
 
     cost=compute_solution_cost(dist_truck)
 
@@ -408,6 +443,7 @@ cost=compute_solution_cost(dist_truck)
 print("Costo=",cost)
 print("Nodo iniziale=",starting_node)
 print("Autonomia drone", drone_autonomy)
+print("Capacita", drone_capacity)
 
 print_graph_for_debug()
 
