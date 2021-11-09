@@ -68,21 +68,22 @@ def print_graph_for_debug(solution):
     colors = [graph_total[u][v]['color'] for u,v in edges]
     visited_list_truck=solution[0]
     visited_list_drone=[]
+    drone_paths=[path for path in solution if solution.index(path)!=0]
     for path in solution:
         if solution.index(path)!=0:
             visited_list_drone+=path
     #creo i colori dei nodi
     color_map=[]
     for node in graph_total:
-    
-            if (node == starting_node): 
-                color_map.append('#ff8000')
-            elif (node in visited_list_truck): 
-                color_map.append('#d16e66')
-            elif (node in visited_list_drone): 
-                color_map.append('#669cd1')
-            else: 
-                color_map.append('green') 
+        if (node == starting_node): 
+            color_map.append('#ff8000')
+        elif (node in visited_list_truck): 
+            color_map.append('#d16e66')
+        elif (node in visited_list_drone): 
+            index=[i for i, path in enumerate(drone_paths) if node in path]
+            color_map.append(paths_colors[index[0]+1])
+        else: 
+            color_map.append('green') 
     #colori degli archi aggiunti ogni volta vh faccio add edge
     
     figure.canvas.manager.window.wm_geometry("+%d+%d" % (-10, 00))
@@ -200,7 +201,7 @@ def create_graph(solution):
     p=1
     while p < len(solution):
         drone_path=solution[p]
-        drone_color=drone_colors[p]
+        drone_color=paths_colors[p]
         if len(drone_path)>1:
             i=0
             while i < len(drone_path)-1:
@@ -865,8 +866,8 @@ def GA(population):
         # print(multiprocessing.current_process(),"      i:",i,"lunghezza population:",len(population)," tempo:",time.time()-start)
     return population,best_sol,best_cost
 
-drone_colors=['red','#3F00FF','#00EB2D','#DDD900','#3C350A','#A1B1F8','#9DFD83','#8CFF00',\
-'#C6FF00','#0040FE','#5B998D','#A36CB1 ','#687044','#B391CB','#27670C']
+paths_colors=['red','#F7AE5D','#5B998D','#DDD900','#928017','#A1B1F8','#9DFD83','#408446',\
+'#C7DA88','#0040FE','#A520A5','#A36CB1 ','#687044','#B391CB','#46822D']
 figure=plt.figure(figsize=(9.5,9.5))
 start=time.time()
 #Creazione grafi e lettura files dei grafi
@@ -956,9 +957,9 @@ drone_capacity=int(drone_capacity)
 
 
 
-INTERNAL_ITERATIONS=100
-MAX_POPULATION_SIZE=500
-OUTER_ITERATIONS=30
+INTERNAL_ITERATIONS=1
+MAX_POPULATION_SIZE=5
+OUTER_ITERATIONS=1
 NODE_PROBABILITY_FOR_MUTATION=0.99
 
 
@@ -991,10 +992,10 @@ if __name__ == '__main__':
     
     #prima creo una poploazione di 100 sol
     start2=time.time()
-    while len(population)<100:
+    while len(population)<50:
         #CROSSOVER
         population_crossover(population)
-
+    print("inizio il calcolo con ",multiprocessing.cpu_count()," processori")
  
     start=time.time()
 

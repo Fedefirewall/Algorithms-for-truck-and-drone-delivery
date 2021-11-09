@@ -65,8 +65,7 @@ def print_graph_for_debug():
     plt.clf()   #clearo il grafico precedente
     nx.draw(graph_total,points,font_size=10, node_size=200,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
     labels = nx.get_edge_attributes(graph_total, 'length') 
-    nx.draw_networkx_edge_labels(graph_total,points, edge_labels=labels)
-    #per stampare le distanze nx.draw_networkx_edge_labels(Grafo, pos)
+    #nx.draw_networkx_edge_labels(graph_total,points, edge_labels=labels)
     
     plt.show()         # display it interactively   
 
@@ -390,11 +389,7 @@ drone_autonomy = 80
 drone_capacity = 300
 
 
-inputs=[w/10 for w in range(-40,-10,5)]+\
-       [w/10 for w in range(-10,-5,2)]+\
-       [w/10 for w in range(-5,5,1)]+\
-       [w/10 for w in range(5,10,2)]+\
-       [w/10 for w in range(10,40,5)]
+inputs=[w/10 for w in range(-40,-10,5)]
     
 
 
@@ -455,6 +450,7 @@ for alpha in inputs:
             #CHEAPEST INSERTION TRUCK
             #controllo se il truck può fare solo un nodo: sono gia ad almeno un nodo, quindi aggiungo l arco piu conveniente    
             best_node_index,node1_best,node2_best=find_best_edge(graph_truck,dist_truck,-1)
+            #print_graph_for_debug()
             #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
             #quindi lo aggiungo e rimuovo l edge corrispondente
             graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='r')
@@ -541,6 +537,7 @@ print("Nodo iniziale=",starting_node)
 print("Autonomia drone", drone_autonomy)
 print("Capacita", drone_capacity)
 print(key_migliore,"ha dato un costo di",migliore_valore)
+print(population[key_migliore])
 end = time.time()
 print(end - start, "secs")
 
