@@ -305,16 +305,25 @@ truck_path, truck_lenght = tsp(point)
 def find_longest_street(path, tabu):
     longest_street = 0
     for element_1 in path:
-        for element_2 in path:
-            if element_1 not in tabu:
-                if element_2 not in tabu:
-                    if path.index(element_2) == path.index(element_1) + 1:
-                        max_street = dist[element_1][element_2] 
-                        if max_street > longest_street:
-                            longest_street = max_street
-                            node1_long = element_1
-                            node2_long = element_2
-                        else: continue
+        node1_index = path.index(element_1)
+        element_2 = path[node1_index + 1]
+        if element_1 not in tabu:
+            if path.index(element_2) == path.index(element_1) + 1:
+                max_street = dist[element_1][element_2] 
+                if max_street > longest_street:
+                    longest_street = max_street
+                    node1_long = element_1
+                    node2_long = element_2
+                else: continue
+        else:
+            if element_2 not in tabu:
+                if path.index(element_2) == path.index(element_1) + 1:
+                    max_street = dist[element_1][element_2] 
+                    if max_street > longest_street:
+                        longest_street = max_street
+                        node1_long = element_1
+                        node2_long = element_2
+                    else: continue  
     return node1_long, node2_long, longest_street
 
 #Ora ricerco i suoi vicini
@@ -348,7 +357,8 @@ def find_edge_for_drone(path, node1, node2):
     if len(add_edge_to_drone) < 2:
         for i in add_edge_to_drone:
             for element in i:
-                add_edge_to_tabu.append(element)
+                if element not in add_edge_to_tabu:
+                    add_edge_to_tabu.append(element)
     else:
         return add_edge_to_drone
     return add_edge_to_drone, add_edge_to_tabu
@@ -368,7 +378,7 @@ for i in range(0, 100):
     if len(edge_for_drone) > 2:
         print("Gli archi da togliere nel grafo del truck e da inserire nel grafico del drone sono: ", edge_for_drone)
     else:
-        print("Gli archi da togliere nel grafo del truck e da inserire nel grafico del drone sono: ", edge_tabu)
+        print("Gli archi da non considerare per la ricerca dell'arco maggiore sono: ", edge_tabu)
     
     
     

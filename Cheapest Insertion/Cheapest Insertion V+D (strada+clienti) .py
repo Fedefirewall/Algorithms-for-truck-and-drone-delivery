@@ -687,8 +687,6 @@ with open('GA_input.txt', 'w') as GA_input:
     json.dump(population, GA_input)
 
 
-
-
 key_migliore=min(results_dic, key = lambda k: results_dic[k])
 migliore_valore=results_dic[key_migliore]
 
@@ -711,6 +709,7 @@ for key, value in results_dic.items():
     i+=1  
 
 sol=population[i]
+
 ##
 ##
 ##
@@ -796,7 +795,11 @@ while(len(visited_list_indexes)<client_number):
 
 
     
-
+with open('2_OPT_input.txt', 'w') as Two_opt_input:
+    Two_opt_input.writelines(str(starting_node)+"\n")
+    Two_opt_input.writelines(str(drone_autonomy)+"\n")
+    Two_opt_input.writelines(str(drone_capacity)+"\n")
+    json.dump(sol, Two_opt_input)
 cost=compute_solution_cost(dist_truck)
 #print("Costo=",cost)
 print_graph_for_debugs(sol)
