@@ -121,18 +121,12 @@ def compute_visited_list():
     return visited_list_truck_indexes
 #Ricerca del nodo più vicino 
 def nearest_node(neighbors_distance,visited_list_indexes):
-    first_time=1
+    min_value=10000000
     for i in range(1,len(neighbors_distance)):  
         #se la distanza non è zero e il nodo non è nella lista dei visitati
         if(not(i in visited_list_indexes)):
             actual_value=neighbors_distance[i]
             actual_index=i
-
-            if(first_time):
-                min_value=actual_value
-                min_index=actual_index
-                first_time=0
-
             if(actual_value<min_value):
                 min_value=actual_value
                 min_index=actual_index

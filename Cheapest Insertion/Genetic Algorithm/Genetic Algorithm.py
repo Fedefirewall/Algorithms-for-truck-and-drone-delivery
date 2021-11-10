@@ -392,7 +392,6 @@ def mutation_1(solution,path_input_index,node_input_index,legal_output_paths_ind
     if(node_concat==False):
         add_node_shortest_detour(solution, legal_output_paths_index, node_input)
 
-
 def population_mutation(population,best_sol):
     to_be_mutated_list=[]
     all_mutated_list=[]
