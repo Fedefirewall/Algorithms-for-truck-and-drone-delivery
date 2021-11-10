@@ -242,7 +242,7 @@ while(len(lista_visitati)<numero_clienti):
             Drone_spostato=1
             graph_drone.add_edge(nodo_attuale_drone,indice_vicino,color=paths_colors[drone_cycle_number])
             solution[drone_cycle_number].append(indice_vicino)
-            print_graph_for_debug(solution)
+            #print_graph_for_debug(solution)
             Drone_percorso_test.append(indice_vicino)
             Movimenti_drone+=1
             Costo_drone+=dist_drone[nodo_attuale_drone][indice_vicino]
@@ -260,7 +260,7 @@ while(len(lista_visitati)<numero_clienti):
             if((Movimenti_drone<=1)&(Drone_spostato)):
                 graph_drone.custom_remove_edge(nodo_attuale_truck,nodo_attuale_drone)
                 solution[drone_cycle_number].clear()
-                print_graph_for_debug(solution)
+                #print_graph_for_debug(solution)
                 Drone_spostato=0
                 nodo_attuale_drone=nodo_attuale_truck
                 lista_visitati.remove(indice_vicino_precedente)
@@ -288,7 +288,7 @@ while(len(lista_visitati)<numero_clienti):
                         Drone_spostato=0
                     graph_drone.custom_remove_edge(Penultimo_nodo_drone,Ultimo_nodo_drone)
                     solution[drone_cycle_number].pop(-1)
-                    print_graph_for_debug(solution)
+                    #print_graph_for_debug(solution)
                     nodo_attuale_drone=Penultimo_nodo_drone
                     lista_visitati.remove(Ultimo_nodo_drone)
                     Drone_percorso_test.remove(Ultimo_nodo_drone)
@@ -299,7 +299,7 @@ while(len(lista_visitati)<numero_clienti):
                 if(Drone_spostato):
                     graph_truck.add_edge(nodo_attuale_truck,nodo_attuale_drone,color='r')
                     solution[0].append(nodo_attuale_drone)
-                    print_graph_for_debug(solution)
+                   # print_graph_for_debug(solution)
                     nodo_attuale_truck=nodo_attuale_drone
                     Drone_on_truck=1
                     if(not(nodo_attuale_drone in lista_visitati)):
@@ -319,7 +319,7 @@ while(len(lista_visitati)<numero_clienti):
                 #endregion
                 graph_truck.add_edge(nodo_attuale_truck,indice_vicino,color='r')
                 solution[0].append(indice_vicino)
-                print_graph_for_debug(solution)
+                #print_graph_for_debug(solution)
                 Drone_on_truck=1 
                 if(not(indice_vicino in lista_visitati)):
                     lista_visitati.append(indice_vicino)
@@ -333,7 +333,7 @@ while(len(lista_visitati)<numero_clienti):
     if((not(len(lista_visitati)<30))&(Drone_on_truck==0)):
         graph_truck.add_edge(nodo_attuale_truck,nodo_attuale_drone,color='r')
         solution[0].append(nodo_attuale_drone)
-        print_graph_for_debug(solution)
+        #print_graph_for_debug(solution)
         Drone_on_truck=1 
         if(not(indice_vicino in lista_visitati)):
             lista_visitati.append(indice_vicino)
