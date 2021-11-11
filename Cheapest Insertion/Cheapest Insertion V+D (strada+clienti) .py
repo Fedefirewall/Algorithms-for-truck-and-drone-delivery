@@ -477,7 +477,7 @@ graph_drone = Custom_Graph()
 
 #----------Inizio lettura coordinate e inserimento nel grafo e distanze drone-------------
 #region
-filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
+filename = 'Posizioni_clienti.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
