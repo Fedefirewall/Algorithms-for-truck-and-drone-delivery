@@ -7,7 +7,8 @@ from networkx.classes import graph
 import numpy as np
 import random
 
-class CustomError_noedges(Exception):
+#classe che identifica una coppia di nodi senza archi tra di essi
+class CustomError_noedges(Exception): 
     def __init__(self,*args):
         if args:
             self.message = args[0]
@@ -21,6 +22,7 @@ class CustomError_noedges(Exception):
         else:
             return "base has edge error custom"
 
+#classe per rimuovere archi (da chiamare dopo avere fatto il controllo di capacità e autonomia)
 class Custom_Graph(nx.Graph):
     def custom_remove_edge(self,node1,node2,solution):
         if self.has_edge(node1,node2):
@@ -32,8 +34,8 @@ class Custom_Graph(nx.Graph):
             #print_graph_for_debug(solution)
             raise CustomError_noedges(str(node1)+" "+str(node2))
 
+#funzione che unisce il grafo del Truck con quello del Drone
 def print_graph_for_debug(solution):
-
     graph_total = nx.compose(graph_truck,graph_drone)
     edges = graph_total.edges()
     colors = [graph_total[u][v]['color'] for u,v in edges]
@@ -55,9 +57,9 @@ def print_graph_for_debug(solution):
             color_map.append(paths_colors[index[0]+1])
         else: 
             color_map.append('green') 
-    #colori degli archi aggiunti ogni volta vh faccio add edge
+    #colori degli archi aggiunti ogni volta che faccio "add edge"
     
-    figure.canvas.manager.window.wm_geometry("+%d+%d" % (-10, 00))
+    figure.canvas.manager.window.wm_geometry("+%d+%d" % (-10, 00)) #da una grandezza standard alla figura
     plt.clf()   #clearo il grafico precedente
     nx.draw(graph_total,points,font_size=9, node_size=170,with_labels=True, arrowsize=20,edge_color=colors,node_color=color_map)  # create a graph with the tour
     labels = nx.get_edge_attributes(graph_total, 'length') 
@@ -65,14 +67,14 @@ def print_graph_for_debug(solution):
     nx.draw_networkx_edge_labels(graph_total,points, edge_labels=labels, font_size=7)
      
     
-    plt.show()         # display it interactively 
+    plt.show()         #stampa il grafico 
 
-
+#funzione che determina il nodo più vicino al nodo corrente
 def piu_vicino(neihgbourlist,lista_visitati):
     first_time=1
     indice_minimo=-1
     for i in range(0,len(neihgbourlist)):  
-        #se la distanza nonè zero e il nodo non è nella lista dei visitati
+        #se la distanza non è zero e il nodo non è nella lista dei visitati
         if(not(i+1 in lista_visitati)):
             valore_attuale=neihgbourlist[i]
             indice_attuale=i+1
@@ -88,6 +90,7 @@ def piu_vicino(neihgbourlist,lista_visitati):
                 indice_minimo=indice_attuale
     return indice_minimo
 
+#funzione che ritorna il costo speso dal Truck
 def compute_solution_cost(path_truck):    
     cost=0
     for i in range (len(path_truck)-1):
@@ -102,7 +105,7 @@ graph_drone = nx.Graph()
 graph_truck = nx.Graph()
 
 #----------INIZIO Lettura file nodi----------------
-filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
+filename = 'Posizioni_clienti.txt'      #nome file puntatore
 istanza = open(filename, 'r')
 coord_section = False  
 points = {}
@@ -159,7 +162,7 @@ for line in istanza.readlines():
     elif re.match('FINE.*', line):
         break
 
-    #CREAZIONE matrice
+    #CREAZIONE matrice TRUCK
     if dist_section:   
         coord = line.split(' ')
         for j in range(0,numero_clienti):
@@ -185,6 +188,7 @@ solution=[[starting_node]]
 
 Drone_on_truck=1
 Drone_spostato=0
+#vincoli drone
 Autonomia_drone=35
 Capacita=300
 autonomia_drone_attuale=Autonomia_drone
@@ -214,6 +218,7 @@ while(len(lista_visitati)<numero_clienti):
     #Sotto-ciclo drone, posso uscire se finisce l'autonomia,supero la capacità o se visito l'ultimo nodo con il drone
     Drone_percorso_test=[]
     
+    #verifica vincoli
     while((autonomia_drone_attuale>0)&(peso_trasportato_attuale<=Capacita)&(len(lista_visitati)<numero_clienti)):
         
         #creo la lista dei vicini
@@ -249,25 +254,25 @@ while(len(lista_visitati)<numero_clienti):
             lista_visitati.append(indice_vicino)
             nodo_attuale_drone=indice_vicino
             indice_vicino_precedente=indice_vicino
-        #2 se il drone non riesce a raggiungere ul nodo più vicino: 3 possibilità
+        #2 se il drone non riesce a raggiungere il nodo più vicino: 3 possibilità
             #1 se il drone si è spostato e ha fatto un solo movimento mando il truck nel nodo dove si trova il drone 
-            #2 il drone si è spostao con più di 1 movimento
+            #2 il drone si è spostato con più di 1 movimento
             #3 se il drone NON si è spostato mando il truck nel nodo più vicino
         else:
-            print("Auto ",autonomia_drone_attuale)
-            print("peso ",peso_trasportato_attuale)
-            # 1 il drone si è spostao ed è riusciuto a fare solo un movimento → annullo il movimento
+            print("Autonomia: ",autonomia_drone_attuale)
+            print("Peso: ",peso_trasportato_attuale)
+            # 1 il drone si è spostao ed è riusciuto a fare solo un movimento → annullo il movimento e ci mando il Truck
             if((Movimenti_drone<=1)&(Drone_spostato)):
                 graph_drone.custom_remove_edge(nodo_attuale_truck,nodo_attuale_drone)
                 solution[drone_cycle_number].clear()
                 #print_graph_for_debug(solution)
                 Drone_spostato=0
-                nodo_attuale_drone=nodo_attuale_truck
+                nodo_attuale_drone=nodo_attuale_truck #ci mando il Truck
                 lista_visitati.remove(indice_vicino_precedente)
                 indice_vicino=indice_vicino_precedente
                 Drone_on_truck=1
-            # 2 se il drone si è spostato e ha fatto più di un movimento controllo che arrivi dopo del truck,
-            # se cosi è procedo all if(drone_spostato) e mando il truck dal drone
+            # 2 se il drone si è spostato e ha fatto più di un movimento controllo che arrivi dopo il Truck,
+            # se cosi è procedo all' if(drone_spostato) e mando il Truck dal Drone
             # se il truck arriverebbe dopo il drone controllo a ritroso i nodi percorso dal drone fino a trovarne
             # uno accettabile oppure fino a che ho annullato tutte le mosse 
             if((Movimenti_drone>1)&(Drone_spostato)):
@@ -277,9 +282,9 @@ while(len(lista_visitati)<numero_clienti):
                 while((Truck_prima_del_drone==False)&(not(Drone_on_truck))):
                     #finche ho almeno 2 nodi serviti dal drone
                     if(len(Drone_percorso_test)>=2):
-                        Ultimo_nodo_drone=Drone_percorso_test[-1]
-                        Penultimo_nodo_drone=Drone_percorso_test[-2]
-                    #se rimane solo un nood servito dal drone sicuramente il truck arriva dopo(o nello stesso istante)
+                        Ultimo_nodo_drone=Drone_percorso_test[-1] #ultimo elemento
+                        Penultimo_nodo_drone=Drone_percorso_test[-2] #penultimo nodo
+                    #se rimane solo un nodo servito dal drone sicuramente il truck arriva dopo(o nello stesso istante)
                     #e il drone non esegue quindi nessuno spostamento
                     else:
                         Ultimo_nodo_drone=Drone_percorso_test[-1]
@@ -287,7 +292,7 @@ while(len(lista_visitati)<numero_clienti):
                         Drone_on_truck=1
                         Drone_spostato=0
                     graph_drone.custom_remove_edge(Penultimo_nodo_drone,Ultimo_nodo_drone)
-                    solution[drone_cycle_number].pop(-1)
+                    solution[drone_cycle_number].pop(-1) #pop è come remove, ma lo restituisce anche
                     #print_graph_for_debug(solution)
                     nodo_attuale_drone=Penultimo_nodo_drone
                     lista_visitati.remove(Ultimo_nodo_drone)
@@ -298,7 +303,7 @@ while(len(lista_visitati)<numero_clienti):
                 #se non ho annullato tutte le mosse e il drone si è spostato
                 if(Drone_spostato):
                     graph_truck.add_edge(nodo_attuale_truck,nodo_attuale_drone,color='r')
-                    solution[0].append(nodo_attuale_drone)
+                    solution[0].append(nodo_attuale_drone) #aggiungo alla lista del Truck
                    # print_graph_for_debug(solution)
                     nodo_attuale_truck=nodo_attuale_drone
                     Drone_on_truck=1
@@ -306,7 +311,7 @@ while(len(lista_visitati)<numero_clienti):
                         lista_visitati.append(nodo_attuale_drone)
                     
                 
-            #3 altrimenti se il drone non si è spostato
+            #3 altrimenti se il drone non si è spostato -> mando il Truck al nodo più vicino
             if(not(Drone_spostato)):
                 #region
                 #creo la lista dei vicini
@@ -329,7 +334,7 @@ while(len(lista_visitati)<numero_clienti):
     #infine ricarica drone
     autonomia_drone_attuale=Autonomia_drone
 
-    #Qua sto uscnedo dal ciclo con l'ultino cliente servito dal drone
+    #Qua sto uscendo dal ciclo con l'ultimo cliente servito dal drone
     if((not(len(lista_visitati)<30))&(Drone_on_truck==0)):
         graph_truck.add_edge(nodo_attuale_truck,nodo_attuale_drone,color='r')
         solution[0].append(nodo_attuale_drone)
@@ -351,13 +356,12 @@ while(len(lista_visitati)<numero_clienti):
 print("Scaricando l'istanza, creando il grafo")
 #aggiungo l'arco finale
 graph_truck.add_edge(nodo_attuale_truck,starting_node,color='r')
-
-print_graph_for_debug(solution)
+solution[0].append(starting_node)
 
 visited_list_truck=solution[0]
 cost=compute_solution_cost(visited_list_truck)
-print("nodo di partenza="+str(starting_node))
-print("costo=",cost)
+print("Nodo di partenza: "+str(starting_node))
+print("Costo: ",cost) #costo Truck
+print("La soluzione del problema con la Nearest Neighbour è: ", solution)
 
-
-print("aaa")
+print_graph_for_debug(solution)
