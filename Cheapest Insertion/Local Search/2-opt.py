@@ -551,3 +551,4 @@ if __name__ == '__main__':
     #node3_switch_truck_index = 7
     #node4_switch_truck_index = 8
     print("La ricerca locale 2-opt ha trovato la soluzione: ", solution, "\ncon costo: ", cost_truck_best)
+    print_graph_for_debug()
