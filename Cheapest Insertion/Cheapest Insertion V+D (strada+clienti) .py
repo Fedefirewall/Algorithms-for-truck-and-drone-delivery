@@ -507,7 +507,7 @@ graph_drone_clear=Custom_Graph()
 
 #----------Inizio lettura coordinate e inserimento nel grafo e distanze drone-------------
 #region
-filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
+filename = 'Posizioni_clienti.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
@@ -721,8 +721,6 @@ with open('GA_input.txt', 'w') as GA_input:
     json.dump(population, GA_input)
 
 
-
-
 key_migliore=min(results_dic, key = lambda k: results_dic[k])
 migliore_valore=results_dic[key_migliore]
 
@@ -745,7 +743,16 @@ for key, value in results_dic.items():
     i+=1  
 
 sol=population[i]
-print(sol)
+
+with open('2_OPT_input.txt', 'w') as Two_opt_input:
+    Two_opt_input.writelines(str(starting_node)+"\n")
+    Two_opt_input.writelines(str(drone_autonomy)+"\n")
+    Two_opt_input.writelines(str(drone_capacity)+"\n")
+    json.dump(sol, Two_opt_input)
+cost=compute_solution_cost(dist_truck)
+
+print("La soluzione al problema con L'algoritmo Cheapest Insertion è: ", sol)
+#print("Costo=",cost)
 print_graph_for_debugs(sol)
 
 
