@@ -710,16 +710,9 @@ for key, value in results_dic.items():
 
 sol=population[i]
 
-##
-##
-##
-##
+
 ## FACCIO L'ULTIMO CICLO CON L'ALPHA MIGLIORE
-##
-##
-##
-##
-##
+
 
 drone_cycle_number=0
 keys=key_migliore.split(" ")
