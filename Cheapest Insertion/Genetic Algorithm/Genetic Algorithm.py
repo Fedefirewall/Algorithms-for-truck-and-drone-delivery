@@ -883,7 +883,7 @@ graph_drone_clear = Custom_Graph()
 
 #----------Inizio lettura coordinate e inserimento nel grafo e distanze drone-------------
 
-filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
+filename = 'Posizioni_clienti.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
@@ -1048,7 +1048,7 @@ if __name__ == '__main__':
     for solution in population:
         costs.append(compute_solution_cost(solution))
     minim=min(costs)
-    print("prijma della local avevo come migliore: ",initial_best_index, " con costo: ", initial_best_cost)
+    print("Prima della local avevo come migliore: ",initial_best_index, " con costo: ", initial_best_cost)
     print("TROVATO IL MIGLIORE:",costs.index(minim),minim)
     print("INTERNAL_ITERATIONS:",INTERNAL_ITERATIONS)
     print("MAX_POPULATION_SIZE:",MAX_POPULATION_SIZE)
