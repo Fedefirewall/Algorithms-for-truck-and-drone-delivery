@@ -801,6 +801,8 @@ with open('2_OPT_input.txt', 'w') as Two_opt_input:
     Two_opt_input.writelines(str(drone_capacity)+"\n")
     json.dump(sol, Two_opt_input)
 cost=compute_solution_cost(dist_truck)
+
+print("La soluzione al problema con L'algoritmo Cheapest Insertion è: ", sol)
 #print("Costo=",cost)
 print_graph_for_debugs(sol)
 

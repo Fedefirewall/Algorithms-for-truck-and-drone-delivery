@@ -6,6 +6,7 @@ import math
 from networkx.classes import graph
 import numpy as np
 import random
+import json
 
 #classe che identifica una coppia di nodi senza archi tra di essi
 class CustomError_noedges(Exception): 
@@ -358,10 +359,17 @@ print("Scaricando l'istanza, creando il grafo")
 graph_truck.add_edge(nodo_attuale_truck,starting_node,color='r')
 solution[0].append(starting_node)
 
+with open('2_OPT_input.txt', 'w') as Two_opt_input:
+    Two_opt_input.writelines(str(starting_node)+"\n")
+    Two_opt_input.writelines(str(Autonomia_drone)+"\n")
+    Two_opt_input.writelines(str(Capacita)+"\n")
+    json.dump(solution, Two_opt_input)
+
 visited_list_truck=solution[0]
 cost=compute_solution_cost(visited_list_truck)
 print("Nodo di partenza: "+str(starting_node))
 print("Costo: ",cost) #costo Truck
 print("La soluzione del problema con la Nearest Neighbour è: ", solution)
+
 
 print_graph_for_debug(solution)
