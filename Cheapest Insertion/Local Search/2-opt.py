@@ -429,6 +429,7 @@ for i in range(1, len(population_dup)):
     else:
         continue
 
+truck_path.append(truck_path[0])
 cost_truck_best = 0
 for j in range(0, len(truck_path) -1):
     nodo1 = truck_path[j]
@@ -438,6 +439,7 @@ for j in range(0, len(truck_path) -1):
 print("Il truck all'inizio percorre la seguente route migliore: ", truck_path, " \nCon un costo di: ", cost_truck_best)
 print("Il drone percorre inizialmente le seguenti route: ", drone_path)
 
+truck_path.pop(-1)
 solution = []
 solution.append(truck_path)
 for element in drone_path:
