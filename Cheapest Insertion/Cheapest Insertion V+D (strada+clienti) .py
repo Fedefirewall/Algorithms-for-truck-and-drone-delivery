@@ -69,8 +69,51 @@ def print_graph_for_debug():
     
     plt.show()         # display it interactively   
 
+def create_graph(solution):
+
+    graph_truck=graph_truck_clear.copy()
+    graph_drone=graph_drone_clear.copy()
+    graphs_couple=[]
+    i=0
+    truck_path=solution[0]
+    while i < len(truck_path)-1:
+        node1=truck_path[i]
+        node2=truck_path[i+1]
+        graph_truck.add_edge(node1,node2,length=round(dist_truck[node1][node2],2),color='r')
+        i+=1
+    node1=truck_path[-1]
+    node2=truck_path[0]
+    graph_truck.add_edge(node1,node2,length=round(dist_truck[node1][node2],2),color='r')
+
+    p=1
+    while p < len(solution):
+        drone_path=solution[p]
+        drone_color=paths_colors[p]
+        if len(drone_path)>1:
+            i=0
+            while i < len(drone_path)-1:
+                node1=drone_path[i]
+                node2=drone_path[i+1]
+                graph_drone.add_edge(node1,node2,length=round(dist_drone[node1][node2],2),color=drone_color)
+                i+=1
+            
+        p+=1
+
+    graphs_couple.append(graph_truck)
+    graphs_couple.append(graph_drone)
+    
+    return graphs_couple
+    # for path in solution:
+    #     while len(path)>1:
+    #         node1=path.pop(0)
+    #         node2=path.pop(0)
+
+
 def print_graph_for_debugs(solution):
 
+    graphs_couple=create_graph(solution)
+    graph_truck=graphs_couple[0]
+    graph_drone=graphs_couple[1]
     graph_total = nx.compose(graph_truck,graph_drone)
     edges = graph_total.edges()
     colors = [graph_total[u][v]['color'] for u,v in edges]
@@ -225,7 +268,6 @@ def drone_Cheapest_trip():
     global drone_trip_counter
     trip_counter_best=0
     #prendo tutti gli archi disponibili nel percorso del truck e con fitness migliore(client +cost*alpha)
-    #print_graph_for_debug()
     for node1,node2 in graph_truck.edges:
         if([node1,node2] not in truck_locked_edges):
             graph_drone.add_edge(node1,node2,length=round(dist_drone[node1][node2],2),color='#97E5FF')
@@ -252,7 +294,6 @@ def drone_Cheapest_trip():
 
                 cost_temp=compute_drone_cost_new(drone_trip_counter)
                 cost=cost_temp-old_edge_cost+new_edge_cost
-                #print_graph_for_debug()
                 if(weight<=drone_capacity and cost<=drone_autonomy):
                     graph_drone.add_edge(best_node_index,node1_start,length=round(dist_drone[best_node_index][node1_start],2),color='#97E5FF')
                     graph_drone.add_edge(best_node_index,node2_start,length=round(dist_drone[best_node_index][node2_start],2),color='#97E5FF')
@@ -277,7 +318,6 @@ def drone_Cheapest_trip():
                 trip_score=(len(visited_list_drone_this_trip))+(cost*alpha)+(weight*beta)
             
                 #se ho trovato un perocorso migliore me lo salvo
-                #print_graph_for_debug()
                 if trip_score>best_trip_score or first_time:
                     best_trip_score=trip_score
                     node1_start_best=node1
@@ -285,9 +325,7 @@ def drone_Cheapest_trip():
                     trip_counter_best=drone_trip_counter
                     first_time=0
 
-            #print_graph_for_debug()
             revert_this_trip(drone_trip_counter)          
-            #print_graph_for_debug()
             drone_trip_counter+=1
 
     #se frist time é vero allora nessun nodo soddisfa,ritorno FAlse e non cnfermo nessun percorso de drone
@@ -334,7 +372,6 @@ def drone_Cheapest_trip():
                 cost=compute_drone_cost_new(trip_counter_best)    
                 weight=compute_drone_weight(trip_counter_best)
 
-        #print_graph_for_debug()
                 
     
         return node1_start_best,node2_start_best
@@ -349,11 +386,9 @@ def drone_Cheapest_tripss():
     global drone_trip_counter
     trip_counter_best=0
     #prendo tutti gli archi disponibili nel percorso del truck e con fitness migliore(client +cost*alpha)
-    #print_graph_for_debug()
     for node1,node2 in graph_truck.edges:
         if([node1,node2] not in truck_locked_edges):
             graph_drone.add_edge(node1,node2,length=round(dist_drone[node1][node2],2),color='#97E5FF')
-            #print_graph_for_debugs(sol)
 
             visited_list_drone.append(Visited_node_drone(node1,drone_trip_counter))
             visited_list_drone.append(Visited_node_drone(node2,drone_trip_counter))
@@ -377,7 +412,6 @@ def drone_Cheapest_tripss():
 
                 cost_temp=compute_drone_cost_new(drone_trip_counter)
                 cost=cost_temp-old_edge_cost+new_edge_cost
-                #print_graph_for_debug()
                 if(weight<=drone_capacity and cost<=drone_autonomy):
                     graph_drone.add_edge(best_node_index,node1_start,length=round(dist_drone[best_node_index][node1_start],2),color='#97E5FF')
                     graph_drone.add_edge(best_node_index,node2_start,length=round(dist_drone[best_node_index][node2_start],2),color='#97E5FF')
@@ -389,7 +423,6 @@ def drone_Cheapest_tripss():
                     sub_clients_counter=len(visited_list_drone_this_trip)
                     #lo rimuovo in ogni caso cosi risolvo il rpoblema dell arco obbligatorio
                     graph_drone.custom_remove_edge(node1_start,node2_start)
-                    #print_graph_for_debugs(sol)
                     cost=compute_drone_cost_new(drone_trip_counter)
                     weight=compute_drone_weight(drone_trip_counter)
             #controllo lo score slo se la path ha + di 2 nodi
@@ -402,7 +435,6 @@ def drone_Cheapest_tripss():
                 trip_score=(len(visited_list_drone_this_trip))+(cost*alpha)+(weight*beta)
             
                 #se ho trovato un perocorso migliore me lo salvo
-                #print_graph_for_debug()
                 if trip_score>best_trip_score or first_time:
                     best_trip_score=trip_score
                     node1_start_best=node1
@@ -411,9 +443,7 @@ def drone_Cheapest_tripss():
                     first_time=0
 
 
-            #print_graph_for_debugs(sol)
             revert_this_trip(drone_trip_counter)       
-            #print_graph_for_debugs(sol)   
 
             drone_trip_counter+=1
 
@@ -421,7 +451,6 @@ def drone_Cheapest_tripss():
     if(first_time)==False:       
         #ora che ho trovato il migliore lo confermo
         graph_drone.add_edge(node1_start_best,node2_start_best,length=round(dist_drone[node1_start_best][node2_start_best],2),color=paths_colors[drone_cycle_number])
-        #print_graph_for_debugs(sol)
         visited_list_drone.append(Visited_node_drone(node1_start_best,trip_counter_best))
         visited_list_drone.append(Visited_node_drone(node2_start_best,trip_counter_best))
         cost=compute_drone_cost_new(trip_counter_best)
@@ -451,7 +480,7 @@ def drone_Cheapest_tripss():
             if(weight<=drone_capacity and cost<=drone_autonomy):
                 graph_drone.add_edge(best_node_index,node1_start_best,length=round(dist_drone[best_node_index][node1_start_best],2),color=paths_colors[drone_cycle_number])
                 graph_drone.add_edge(best_node_index,node2_start_best,length=round(dist_drone[best_node_index][node2_start_best],2),color=paths_colors[drone_cycle_number])
-                #print_graph_for_debugs(sol)
+
                 visited_list_indexes=compute_visited_list()
                 visited_list_drone.append(Visited_node_drone(best_node_index,trip_counter_best))
                 # conto quanti clienti sta servendo il drone in questo viaggio
@@ -462,7 +491,7 @@ def drone_Cheapest_tripss():
                 cost=compute_drone_cost_new(trip_counter_best)    
                 weight=compute_drone_weight(trip_counter_best)
 
-        #print_graph_for_debug()
+
                 
     
         return node1_start_best,node2_start_best
@@ -472,8 +501,9 @@ def drone_Cheapest_tripss():
 
 
 #Creazione grafi
-graph_truck = Custom_Graph()  
-graph_drone = Custom_Graph()    
+   
+graph_truck_clear=Custom_Graph()
+graph_drone_clear=Custom_Graph()   
 
 #----------Inizio lettura coordinate e inserimento nel grafo e distanze drone-------------
 #region
@@ -501,11 +531,12 @@ for line in istance.readlines():
         points[index] = (coord_x, coord_y)
         weight= float(coord[3])
         weights_dict[index]=weight
-        graph_truck.add_node(index, pos=(coord_x, coord_y))
+        graph_truck_clear.add_node(index, pos=(coord_x, coord_y))
 client_number=index
 client_number_range=client_number+1  
 istance.close()
-
+graph_truck = graph_truck_clear.copy()  
+graph_drone = graph_drone_clear.copy()
 #Inizializzo la matrice delle distanze del drone
 dist_drone = [ [ 0 for i in range(client_number_range) ] for j in range(client_number_range) ]
 #Calcolo le distanze e riempio la matrice del drone
@@ -551,7 +582,11 @@ paths_colors=['red','#7C69FF','#00EB2D','#DDD900','#928017','#A1B1F8','#9DFD83',
 '#C6FF00','#0040FE','#5B998D','#A36CB1 ','#687044','#B391CB','#27670C']
 figure=plt.figure(figsize=(9.5,9.5))
 
-inputs=[w/10 for w in range(-40,-10,5)]
+inputs=[w/10 for w in range(-40,-10,5)]+\
+       [w/10 for w in range(-10,-5,2)]+\
+       [w/10 for w in range(-5,5,1)]+\
+       [w/10 for w in range(5,10,2)]+\
+       [w/10 for w in range(10,40,5)]
     
 
 
@@ -612,7 +647,7 @@ for alpha in inputs:
             #CHEAPEST INSERTION TRUCK
             #controllo se il truck può fare solo un nodo: sono gia ad almeno un nodo, quindi aggiungo l arco piu conveniente    
             best_node_index,node1_best,node2_best=find_best_edge(graph_truck,dist_truck,-1)
-            #print_graph_for_debug()
+
             #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
             #quindi lo aggiungo e rimuovo l edge corrispondente
             graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='r')
@@ -630,7 +665,7 @@ for alpha in inputs:
                 drone_Cheapest_trip()
 
             cost=compute_solution_cost(dist_truck)
-        #print_graph_for_debug()
+
 
             
 
@@ -639,7 +674,6 @@ for alpha in inputs:
         key=str(alpha)+" & "+str(beta)
         results_dic[key]=cost
         
-        # print_graph_for_debug()
 
         #Aggiungo alla lista per GA
         truck_path=[]
@@ -679,7 +713,7 @@ for alpha in inputs:
 
         population.append(solution)
         
-
+#scrivo su file i risultati
 with open('GA_input.txt', 'w') as GA_input:
     GA_input.writelines(str(starting_node)+"\n")
     GA_input.writelines(str(drone_autonomy)+"\n")
@@ -711,99 +745,9 @@ for key, value in results_dic.items():
     i+=1  
 
 sol=population[i]
-##
-##
-##
-##
-## FACCIO L'ULTIMO CICLO CON L'ALPHA MIGLIORE
-##
-##
-##
-##
-##
-
-drone_cycle_number=0
-keys=key_migliore.split(" ")
-alpha=float(keys[0])
-beta=float(keys[2])
-#rimuovo gli archi creati ai cicli precedenti(parto da un grafo nuovo)
-graph_truck.remove_edges_from(list(graph_truck.edges))
-graph_drone.remove_edges_from(list(graph_drone.edges))
-
-#Decido il nodo di partenza, ovvero il nostro deposito. 
-truck_node_index = starting_node
-
-#Dichiaro la lista dei nodi visitati durante l'algoritmo
-visited_list_indexes = [starting_node]
-#Dichiaro la lista dei nodi visitati dal truck durante l'algoritmo
-visited_list_truck_indexes = [starting_node]
-
-cost = 0    #costo iniziale del veicolo
-drone_on_truck=1
-
-
-visited_list_drone=[]
-truck_locked_edges=[]
-
-# conto quanti viaggi fa il drone
-drone_trip_counter=0
-# conto quanti clienti fa il drone
-drone_clients_counter=0
-
-#-------FINE INIZIALIZZAZIONE-------
-
-
-#INIZIO CODICE
-#Creo la lista con le distanze dei vicini
-neighbors_distance = [0]
-for i in range(1, client_number_range): 
-    neighbors_distance.append(dist_drone[truck_node_index][i])
-#Inserisco in nearest_index il nodo più vicino al truck
-nearest_index = nearest_node(neighbors_distance, visited_list_indexes)
-graph_truck.add_edge(truck_node_index,nearest_index,length=round(dist_truck[truck_node_index][nearest_index],2),color='r')
-visited_list_truck_indexes=compute_visited_list_truck()
-visited_list_indexes=compute_visited_list()
-#print_graph_for_debug()
-#ciclo esterno del truck
-first_time=1
-last_node=0
-solution=[[starting_node]]
-while(len(visited_list_indexes)<client_number):
-
-    sub_clients_counter=0
-    drone_returned=False
-
-    #CHEAPEST INSERTION TRUCK
-    #controllo se il truck può fare solo un nodo: sono gia ad almeno un nodo, quindi aggiungo l arco piu conveniente    
-    best_node_index,node1_best,node2_best=find_best_edge(graph_truck,dist_truck,-1)
-    #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
-    #quindi lo aggiungo e rimuovo l edge corrispondente
-    graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='r')
-    graph_truck.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2),color='r')
-    #print_graph_for_debugs(sol)
-    visited_list_indexes.append(best_node_index)
-    visited_list_truck_indexes=compute_visited_list_truck()
-    #rimuovo solo se non sono al 2 ciclo, senno per la storia del undirected eliminerei il primo arco
-    if(len(visited_list_truck_indexes)>3):
-        graph_truck.custom_remove_edge(node1_best,node2_best)
-
-    #CICLO DEL DRONE
-    if(len(visited_list_indexes)<client_number):
-        drone_cycle_number+=1
-        drone_Cheapest_tripss()
-
-    cost=compute_solution_cost(dist_truck)
-
-
-    
-
-cost=compute_solution_cost(dist_truck)
-#print("Costo=",cost)
+print(sol)
 print_graph_for_debugs(sol)
 
-
-
-#scrivo su file tutti i risultati per GA
 
 
 

@@ -227,7 +227,7 @@ def concat_drone_paths(solution,node):
 
     paths_to_concat=[path for path in drone_paths if path[0]==node or path[-1]==node]
     if len(paths_to_concat)<2:
-        print_graph_for_debug(solution)
+        print("PATHS TO CONCAT<2")
     path_to_concat_index_1=solution.index(paths_to_concat[0])
     path_to_concat_index_2=solution.index(paths_to_concat[1])
     if paths_to_concat[0][-1]==paths_to_concat[1][-1]:
@@ -246,7 +246,7 @@ def concat_drone_paths(solution,node):
     
     for node in concatenate_paths:
         if concatenate_paths.count(node)>1:
-            print_graph_for_debug(solution)
+            print("NODO DUPLICATO IN CONCATENATE PATHS")
     if(cost>drone_autonomy or weight>drone_capacity):
         return False,False
     else:
@@ -254,8 +254,7 @@ def concat_drone_paths(solution,node):
         return True,output
 
 def compute_legal_inputs_nodes(solution,path_index):
-    illegal_inputs_nodes=[]
-    
+    illegal_inputs_nodes=[starting_node]
     
     path=solution[path_index]
 
@@ -283,8 +282,34 @@ def add_node_shortest_detour(solution, legal_output_paths_index, node_input):
     #cerco il posto migliore per inserire il nodo, tale che il detour sia minimo
     
     diff_min=100000000000
+
+    #se il path é nuovo controllo se l"arco é libero e se i nodi non sono pieni
+    
+
     for path_output_index in legal_output_paths_index:
         path=solution[path_output_index]
+
+        if len(path)==0:
+            truck_edges=compute_path_edges(solution,0)
+            for edge in truck_edges:
+                node1=edge[0]
+                node2=edge[1]
+                if edge_free(solution,node1,node2):
+                    #and node_degree(solution,node1)<4 and node_degree(solution,node2)<4:
+                    edge=[node1,node2,"New"]
+                    new_edges_cost=(dist_drone[node_input][node1]) + (dist_drone[node_input][node2]) 
+                    #penalizzo la creazione di nuovi path
+                    actual_diff=new_edges_cost+100
+                    actual_cost=new_edges_cost
+                    actual_weight=weights_dict[node_input]
+                    if actual_weight>drone_capacity:
+                        #se aggiungom questo nodo al path , indipendentemente da quale punto lo andrò ad aggiungre, supero la capacità
+                        #sono nel caso inn cui sarebbe l"unico nodo del path, quindi il peso del singolo nodo é maggiore della capacità
+                        break
+                    if (actual_diff<diff_min and actual_cost<=drone_autonomy):                     
+                        diff_min=actual_diff
+                        min_path_index=path_output_index
+                        min_edge=edge  
 
         path_edges=compute_path_edges(solution,path_output_index)
         #scorro gli archi
@@ -323,23 +348,7 @@ def add_node_shortest_detour(solution, legal_output_paths_index, node_input):
                 min_path_index=path_output_index
                 min_edge=edge
 
-            #se invece il path é nuovo controllo se l"arco é libero e se i nodi non sono pieni
-            if len(path)==0 and edge_free(solution,node1,node2) and node_degree(solution,node1)<4 and node_degree(solution,node2)<4:
-                edge=[node1,node2,"New"]
-                new_edges_cost=(dist_drone[node_input][node1]) + (dist_drone[node_input][node2]) 
-                actual_diff=new_edges_cost+100
-                actual_cost=new_edges_cost
-                actual_weight=weights_dict[node_input]
-                if actual_weight>drone_capacity:
-                    #se aggiungom questo nodo al path , indipendentemente da quale punto lo andrò ad aggiungre, supero la capacità
-                    #sono nel caso inn cui sarebbe l"unico nodo del path, quindi il peso del singolo nodo é maggiore della capacità
-                    break
-                if (actual_diff<diff_min and actual_cost<=drone_autonomy):
-                    #penalizzo la creazione di nuovi path
-                    diff_min=actual_diff
-                    min_path_index=path_output_index
-                    min_edge=edge
-
+            
     
 
     #se non ho trovato un modo per aggiungere il nodo
@@ -369,7 +378,6 @@ def mutation_1(solution,path_input_index,node_input_index,legal_output_paths_ind
     path_input=solution[path_input_index]
     node_input=path_input[node_input_index]
     #rimuovo il nodo dal grafo, e se il percorso ha solo due nodi allora lo elimino
-    #print_graph_for_debug(solution)
     path_input.pop(node_input_index)
     if len(path_input)<3:
         path_input.clear()
@@ -379,7 +387,7 @@ def mutation_1(solution,path_input_index,node_input_index,legal_output_paths_ind
     if(node_degree(solution,node_input)>0):
         node_concat=True
         #sistemo i path del drone
-        #print_graph_for_debug(solution)
+
         res,concat_output=concat_drone_paths(solution,node_input)
         first_path_index=concat_output[1]
         second_path_index=concat_output[2]
@@ -542,7 +550,6 @@ def remove_double_visited_nodes(solution):
         
         for node in to_be_removed:
             path.remove(node)
-        # print_graph_for_debug(solution)
 
 
 def return_double_visited_nodes(solution):
@@ -956,10 +963,10 @@ drone_capacity=int(drone_capacity)
 
 
 
-INTERNAL_ITERATIONS=1
-MAX_POPULATION_SIZE=5
-OUTER_ITERATIONS=1
-NODE_PROBABILITY_FOR_MUTATION=0.99
+INTERNAL_ITERATIONS=100
+MAX_POPULATION_SIZE=500
+OUTER_ITERATIONS=10
+NODE_PROBABILITY_FOR_MUTATION=0.98
 
 
 
