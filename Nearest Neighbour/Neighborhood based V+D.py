@@ -230,7 +230,7 @@ while(len(lista_visitati)<numero_clienti):
         #endregion      
         #Provo se il drone riesce a raggiungere il nodo più vicino
         autonomia_drone_attuale=autonomia_drone_attuale-dist_drone[nodo_attuale_drone][indice_vicino]
-        print("sto provadno a fare",nodo_attuale_drone,indice_vicino)
+        print("sto provando a fare",nodo_attuale_drone,indice_vicino)
         peso_trasportato_attuale=peso_trasportato_attuale+lista_pesi_pacchi[indice_vicino]
         #a questo punto ho 2 possibilità: 
             # 1 il drone riesce a raggiungere il nodo più vicino(if) 
