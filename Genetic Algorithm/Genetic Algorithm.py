@@ -1116,8 +1116,8 @@ if __name__ == '__main__':
     print("inizio il calcolo con ",multiprocessing.cpu_count()," processori\n")
  
     start=time.time()
-    
-    pbar=tqdm (range(OUTER_ITERATIONS), desc=str(multiprocessing.cpu_count())+" Populations Evolving... best cost = "+str(initial_best_cost)+"  pop size: "+str(len(population)),bar_format='{l_bar}{bar:70}{r_bar}{bar:-10b}')
+    num_pop=multiprocessing.cpu_count()-1
+    pbar=tqdm (range(OUTER_ITERATIONS), desc=str(num_pop)+" Populations Evolving... best cost = "+str(initial_best_cost)+"  pop size: "+str(len(population)),bar_format='{l_bar}{bar:70}{r_bar}{bar:-10b}')
     for j in pbar:
         #poi faccio partire
         start=time.time()
@@ -1152,7 +1152,7 @@ if __name__ == '__main__':
         for solution in new_population_dup:
             if not solution_duplicated(population,solution):
                 population.append(solution)    
-        pbar.set_description(str(multiprocessing.cpu_count())+" Populations Evolving... best cost = "+str(initial_best_cost)+"  pop size: "+str(len(new_population_dup)))
+        pbar.set_description(str(num_pop)+" Populations Evolving... best cost = "+str(initial_best_cost)+"  pop size: "+str(len(new_population_dup)))
         # print("tra elim e rimoz dup ci ho messo ",time.time()-start1)
 
 

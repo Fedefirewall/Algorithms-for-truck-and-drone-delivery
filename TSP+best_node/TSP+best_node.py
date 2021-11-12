@@ -9,6 +9,7 @@ from networkx.algorithms.centrality.eigenvector import eigenvector_centrality_nu
 from networkx.classes.function import neighbors 
 import numpy as np 
 import random
+from tqdm import tqdm
 
 alpha=100
 beta=-10000
@@ -749,55 +750,71 @@ inputs=[w/10 for w in range(-200,-10,5)]+\
 results_dic={}
 population=[]
 
+ab_list=[]
 for alpha in inputs:
     for beta in inputs:
-        print(alpha,beta)
-        solution=copy.deepcopy(solution_clear)
-        truck_path=solution[0]
+        key1=[alpha,beta]
+        ab_list.append(key1)
+
+desc="Trying different values... alpha="+str(inputs[0])+" beta="+str(inputs[0])+"   "
+desc_len=len(desc)
+pbar=tqdm (ab_list, desc=desc,leave=True,bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}')
+for key in pbar:
+    alpha=key[0]
+    beta=key[1]
+    desc="Trying different values... alpha="+str(alpha)+" beta="+str(beta)+"  "
+    while len(desc)!=desc_len:
+        if len(desc)<desc_len:
+            desc+=" "
+        if len(desc)>desc_len:
+            desc=desc[:-1]
+    pbar.set_description(desc)
+    solution=copy.deepcopy(solution_clear)
+    truck_path=solution[0]
 
 
-        best_node="starting"
-        while best_node!=-1: 
-            prev_node, best_node, next_node = find_best_node(solution)
-            if best_node!=-1:   
-                #print (prev_node, best_node, next_node)
-                node_concat=False
+    best_node="starting"
+    while best_node!=-1: 
+        prev_node, best_node, next_node = find_best_node(solution)
+        if best_node!=-1:   
+            #print (prev_node, best_node, next_node)
+            node_concat=False
 
-                truck_path.remove(best_node)
+            truck_path.remove(best_node)
 
-                # #guardo se il nodo era usato dal drone equindi devo fondere i path, se no non devo farlo
-                # graph_total = nx.compose(graph_truck,graph_drone)
-                if(node_degree(solution,best_node)>0):
-                    
-                    node_concat=True
-                    #sistemo i path del drone
-                    #print_graph_for_debug(solution)
-                    res,concat_output=concat_drone_paths(solution,best_node)
-                    if concat_output==False:
-                        print_graph_for_debug_NEW(solution)
-                    first_path_index=concat_output[1]
-                    second_path_index=concat_output[2]
-                    total_path=concat_output[0]
-
-                    solution[first_path_index]=total_path
-                    
-                    # se l indice é -1 signifche cge non ho concatenato 2 path, ma un path(first path) con un nuvo arco
-                    if second_path_index!=-1:
-                        solution[second_path_index].clear()
-                    
+            # #guardo se il nodo era usato dal drone equindi devo fondere i path, se no non devo farlo
+            # graph_total = nx.compose(graph_truck,graph_drone)
+            if(node_degree(solution,best_node)>0):
                 
-                #se aggiungessi nel miglior modo il nodo ed avevo concatenato, lo troverei visitato 2 volte
-                if(node_concat==False):
+                node_concat=True
+                #sistemo i path del drone
+                #print_graph_for_debug(solution)
+                res,concat_output=concat_drone_paths(solution,best_node)
+                if concat_output==False:
+                    print_graph_for_debug_NEW(solution)
+                first_path_index=concat_output[1]
+                second_path_index=concat_output[2]
+                total_path=concat_output[0]
 
-                    drone_paths_counter=len(solution)-1-solution.count([])
-                    #se ho tanti path del drone quanti nodi del truck, non posso scegliere un path vuoto come output
-                    if len(solution[0])==drone_paths_counter:
-                        
-                        add_node_shortest_detour(solution, "full", best_node)
+                solution[first_path_index]=total_path
+                
+                # se l indice é -1 signifche cge non ho concatenato 2 path, ma un path(first path) con un nuvo arco
+                if second_path_index!=-1:
+                    solution[second_path_index].clear()
+                
+            
+            #se aggiungessi nel miglior modo il nodo ed avevo concatenato, lo troverei visitato 2 volte
+            if(node_concat==False):
 
-                    else:
-                        
-                        add_node_shortest_detour(solution, "free", best_node)
+                drone_paths_counter=len(solution)-1-solution.count([])
+                #se ho tanti path del drone quanti nodi del truck, non posso scegliere un path vuoto come output
+                if len(solution[0])==drone_paths_counter:
+                    
+                    add_node_shortest_detour(solution, "full", best_node)
+
+                else:
+                    
+                    add_node_shortest_detour(solution, "free", best_node)
 
 
         
