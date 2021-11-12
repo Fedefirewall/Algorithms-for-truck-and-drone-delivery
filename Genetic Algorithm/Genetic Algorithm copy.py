@@ -223,35 +223,132 @@ def create_graph(solution):
 
 def concat_drone_paths(solution,node):
     
-    drone_paths=[path for path in solution if solution.index(path)!=0 and len(path)>0]
+    drone_paths=[path for path in solution if path!=solution[0] and len(path)>0]
 
     paths_to_concat=[path for path in drone_paths if path[0]==node or path[-1]==node]
-    if len(paths_to_concat)<2:
-        print("PATHS TO CONCAT<2")
-    path_to_concat_index_1=solution.index(paths_to_concat[0])
-    path_to_concat_index_2=solution.index(paths_to_concat[1])
-    if paths_to_concat[0][-1]==paths_to_concat[1][-1]:
-        paths_to_concat[1].reverse()
-    if paths_to_concat[0][0]==paths_to_concat[1][0]:
-        paths_to_concat[0].reverse()
-    if paths_to_concat[0][0]==paths_to_concat[1][-1]:
-        paths_to_concat[0].reverse()
-        paths_to_concat[1].reverse()
+    #se len==1 significa che provo a togliere uno dei 2 nodi di arrivo/partenza di UN SOLO path del drone
+    if len(paths_to_concat)>2:
+    #print_graph_for_debug(solution)
+        print(paths_to_concat)
+    if len(paths_to_concat)==1:
+        path_to_concat_index_1=solution.index(paths_to_concat[0])
+        path_to_concat_index_2=-1
+        path_to_extend=paths_to_concat[0]
+        truck_path=solution[0]
+        
+        possible_reunion_nodes=[]
+        old_reunion_nodes=[path_to_extend[0],path_to_extend[-1]]
+        #se sto testando la possibilità di concatenare
+        if node_degree(solution,old_reunion_nodes[0])>1 and node_degree(solution,old_reunion_nodes[1])>1:
 
-    concatenate_paths=paths_to_concat[0]+paths_to_concat[1]
-    #rimuovo il nodo , che sarà presente 2 volte
-    concatenate_paths.remove(node)
+            #controllo quale viene prima cosi so quali nodi prendere
+            possible_reunion_nodes=compute_possible_reunion_nodes(solution,old_reunion_nodes)
+            if len(possible_reunion_nodes)>0:
+                best_reunion=min(possible_reunion_nodes,key=lambda x:dist_drone[x][node])
+        #se voglio effetivamente effettuare l estensione
+        else:
+            if node==path_to_extend[0]:
+                reunion_node=path_to_extend[-1]
+                reunion_node_index=truck_path.index(reunion_node)
+                #concatenate_paths = [new_start_node] + path_to_extend
+            elif node==path_to_extend[-1]:
+                reunion_node=path_to_extend[0]
+                reunion_node_index=truck_path.index(reunion_node)
+                #concatenate_paths = path_to_extend + [new_start_node]
+
+            if reunion_node_index==0:
+                next_node=truck_path[reunion_node_index+1]
+                prev_node=truck_path[-1]
+            elif reunion_node_index==len(truck_path)-1:
+                next_node=truck_path[0]
+                prev_node=truck_path[reunion_node_index-1]
+            else:
+                next_node=truck_path[reunion_node_index+1]
+                prev_node=truck_path[reunion_node_index-1]
+            
+            if node_degree(solution, next_node)<4 and edge_free(solution,reunion_node,next_node):
+                possible_reunion_nodes.append(next_node)
+            if node_degree(solution, prev_node)<4 and edge_free(solution,reunion_node,prev_node):
+                possible_reunion_nodes.append(prev_node)
+            if len(possible_reunion_nodes)>0:
+                best_reunion=min(possible_reunion_nodes,key=lambda x:dist_drone[x][node])
+
+        if len(possible_reunion_nodes)>0:
+            if node==path_to_extend[0]:
+                concatenate_paths = [best_reunion] + path_to_extend
+            elif node==path_to_extend[-1]:
+                concatenate_paths = path_to_extend + [best_reunion]
+        elif len(possible_reunion_nodes)==0:
+            return False,False
+
+    #se len==2 significa che provo a togliere uno dei 2 nodi di arrivo/partenza di DUE path del drone
+    if len(paths_to_concat)==2:
+        path_to_concat_index_1=solution.index(paths_to_concat[0])
+        path_to_concat_index_2=solution.index(paths_to_concat[1])
+        if paths_to_concat[0][-1]==paths_to_concat[1][-1]:
+            paths_to_concat[1].reverse()
+        if paths_to_concat[0][0]==paths_to_concat[1][0]:
+            paths_to_concat[0].reverse()
+        if paths_to_concat[0][0]==paths_to_concat[1][-1]:
+            paths_to_concat[0].reverse()
+            paths_to_concat[1].reverse()
+
+        concatenate_paths=paths_to_concat[0]+paths_to_concat[1]
+        #rimuovo il nodo , che sarà presente 2 volte
+        concatenate_paths.remove(node)
+
     cost=compute_path_drone_cost(concatenate_paths)
     weight=compute_drone_weight(concatenate_paths)
     
-    for node in concatenate_paths:
-        if concatenate_paths.count(node)>1:
-            print("NODO DUPLICATO IN CONCATENATE PATHS")
     if(cost>drone_autonomy or weight>drone_capacity):
         return False,False
     else:
         output=[concatenate_paths,path_to_concat_index_1,path_to_concat_index_2]
         return True,output
+
+def compute_possible_reunion_nodes(solution,old_reunion_nodes):
+    
+    truck_path=solution[0]
+    reunion0_index=truck_path.index(old_reunion_nodes[0])
+    reunion1_index=truck_path.index(old_reunion_nodes[1])
+    possible_reunion_nodes=[]
+
+    if (reunion0_index==0 and reunion1_index==1) or (reunion0_index==1 and reunion1_index==0):
+        if edge_free(solution,truck_path[-1],truck_path[0]):
+            possible_reunion_nodes.append(truck_path[-1])
+        if edge_free(solution,truck_path[1],truck_path[2]):
+            possible_reunion_nodes.append(truck_path[2])
+
+    elif (reunion0_index==len(truck_path)-1 and reunion1_index==0) or (reunion0_index==0 and reunion1_index==len(truck_path)-1):
+        if edge_free(solution,truck_path[-1],truck_path[-2]):
+            possible_reunion_nodes.append(truck_path[-2])
+        if edge_free(solution,truck_path[0],truck_path[1]):
+            possible_reunion_nodes.append(truck_path[1])
+       
+    elif (reunion0_index==len(truck_path)-2 and reunion1_index==len(truck_path)-1) or (reunion0_index==len(truck_path)-1 and reunion1_index==len(truck_path)-2):
+        if edge_free(solution,truck_path[-3],truck_path[-2]):
+            possible_reunion_nodes.append(truck_path[-3])
+        if edge_free(solution,truck_path[-1],truck_path[0]):
+            possible_reunion_nodes.append(truck_path[0])
+
+    elif reunion0_index < reunion1_index: 
+        if edge_free(solution,truck_path[reunion0_index-1],truck_path[reunion0_index]):
+            possible_reunion_nodes.append(truck_path[reunion0_index-1])
+        if edge_free(solution,truck_path[reunion1_index],truck_path[reunion1_index+1]):
+            possible_reunion_nodes.append(truck_path[reunion1_index+1])
+    
+    elif reunion1_index < reunion0_index:
+        if edge_free(solution,truck_path[reunion0_index],truck_path[reunion0_index+1]):
+            possible_reunion_nodes.append(truck_path[reunion0_index+1])
+            if edge_free(solution,truck_path[reunion1_index-1],truck_path[reunion1_index]):
+                possible_reunion_nodes.append(truck_path[reunion1_index-1])
+        
+    for node in possible_reunion_nodes:
+        if node_degree(solution, node)>3:
+            possible_reunion_nodes.remove(node)
+    # if len(possible_reunion_nodes)==0:
+    #     print_graph_for_debug_NEW(solution)
+    return possible_reunion_nodes
 
 def compute_legal_inputs_nodes(solution,path_index):
     illegal_inputs_nodes=[starting_node]
@@ -259,16 +356,13 @@ def compute_legal_inputs_nodes(solution,path_index):
     path=solution[path_index]
 
     #se e un path del dronbe
-
     if path_index!=0 and len(path)>2:
         illegal_inputs_nodes.append(path[0])
         illegal_inputs_nodes.append(path[-1])
     if path_index==0:
         for node in path:
             #il nodod de truck é illegale se ha grado >2 e non posso fondere i 2 cicli che gli arrivano
-            if node_degree(solution,node)==3:
-                illegal_inputs_nodes.append(node)
-            if node_degree(solution,node)==4:
+            if node_degree(solution,node)>2:
                 concat_res,out=concat_drone_paths(solution,node)
                 if concat_res==False:
                     illegal_inputs_nodes.append(node)
@@ -425,6 +519,7 @@ def population_mutation(population,best_sol):
 
             
             while(len(to_be_mutated_list)>0):
+
                 value_index=to_be_mutated_list.pop()
                 path_input_index=value_index[0]
                 node_input_index=value_index[1]
@@ -455,7 +550,16 @@ def population_mutation(population,best_sol):
                         #     copied_sol=solution.copy()
                         #     population.append(copied_sol)
                         #     copied_already=1
+                        
                         mutation_1(solution,path_input_index,node_input_index,legal_output_paths_index)
+                        for solution in population:
+                            for path in solution:
+                                for node in path:
+                                    if node_degree(solution,node)>4:
+                                        print(solution,path_input_index,node_input_index,legal_output_paths_index)
+                                        print(node)
+                                        print_graph_for_debug(solution)
+                        
 
             
         
@@ -994,13 +1098,17 @@ if __name__ == '__main__':
     
     #endregion
 
-    
-    
+    sol=[[29, 26, 27, 4, 13, 22, 14, 15, 29, 29], [4, 23, 17, 9, 27], [13, 12, 19, 10, 3, 4], [22, 6, 5, 25, 7, 1, 30, 13], [14, 16, 18, 22], [14, 21, 11, 15], [29, 20, 24, 8, 2, 27], [26, 28, 27], [], [], [], [], [], [], []] 
+    print_graph_for_debug(sol)
+    path_input_index=1
+    node_input_index=2
+    legal_output_paths_index= [0, 2, 3, 4, 5, 6]
     #prima creo una poploazione di 100 sol
     start2=time.time()
     while len(population)<50:
         #CROSSOVER
         population_crossover(population)
+
     print("inizio il calcolo con ",multiprocessing.cpu_count()," processori")
  
     start=time.time()
@@ -1009,7 +1117,7 @@ if __name__ == '__main__':
     while j < OUTER_ITERATIONS:
         #poi faccio partire
         start=time.time()
-        populations_repeated=[population.copy() for i in range(6)]
+        populations_repeated=[population.copy() for i in range(12)]
         with Pool() as pool:
             parallel_output=populations_output=pool.map(GA,populations_repeated)
         time_for_1_cycle=time.time()-start
@@ -1048,7 +1156,7 @@ if __name__ == '__main__':
     for solution in population:
         costs.append(compute_solution_cost(solution))
     minim=min(costs)
-    print("Prima della local avevo come migliore: ",initial_best_index, " con costo: ", initial_best_cost)
+    print("prijma della local avevo come migliore: ",initial_best_index, " con costo: ", initial_best_cost)
     print("TROVATO IL MIGLIORE:",costs.index(minim),minim)
     print("INTERNAL_ITERATIONS:",INTERNAL_ITERATIONS)
     print("MAX_POPULATION_SIZE:",MAX_POPULATION_SIZE)

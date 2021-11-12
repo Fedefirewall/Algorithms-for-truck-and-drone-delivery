@@ -18,7 +18,7 @@ from itertools import repeat
 from itertools import chain
 import itertools
 import random
-
+from tqdm import tqdm
 
 import multiprocessing, logging
 # mpl = multiprocessing.log_to_stderr()
@@ -68,21 +68,22 @@ def print_graph_for_debug(solution):
     colors = [graph_total[u][v]['color'] for u,v in edges]
     visited_list_truck=solution[0]
     visited_list_drone=[]
+    drone_paths=[path for path in solution if solution.index(path)!=0]
     for path in solution:
         if solution.index(path)!=0:
             visited_list_drone+=path
     #creo i colori dei nodi
     color_map=[]
     for node in graph_total:
-    
-            if (node == starting_node): 
-                color_map.append('#ff8000')
-            elif (node in visited_list_truck): 
-                color_map.append('#d16e66')
-            elif (node in visited_list_drone): 
-                color_map.append('#669cd1')
-            else: 
-                color_map.append('green') 
+        if (node == starting_node): 
+            color_map.append('#ff8000')
+        elif (node in visited_list_truck): 
+            color_map.append('#d16e66')
+        elif (node in visited_list_drone): 
+            index=[i for i, path in enumerate(drone_paths) if node in path]
+            color_map.append(paths_colors[index[0]+1])
+        else: 
+            color_map.append('green') 
     #colori degli archi aggiunti ogni volta vh faccio add edge
     
     figure.canvas.manager.window.wm_geometry("+%d+%d" % (-10, 00))
@@ -145,8 +146,8 @@ def edge_free(solution,node1,node2):
         return True
     #non erano entrambi nel truck
     return False
-    
-def solution_duplicated(population,solution_input):
+
+def solution_duplicated_OLD(population,solution_input):
 
     #scorro tutte le soliuzoni
     for solution in population:
@@ -172,6 +173,15 @@ def solution_duplicated(population,solution_input):
     #se sono qua ogni soluzione aveva almeno un path che nopn era contentenuto in nessun path2, flag<15
     return False
 
+def solution_duplicated(population,solution_input):
+
+    #questa funzione rispetto a quella di prima, non tiene conto del fatto che il percorso del truck é ciclico
+    #scorro tutte le soliuzoni
+    for solution in population:
+        if sorted(solution) == sorted(solution_input):
+            return True
+    return False
+
 def create_graph(solution):
 
     graph_truck=graph_truck_clear.copy()
@@ -191,7 +201,7 @@ def create_graph(solution):
     p=1
     while p < len(solution):
         drone_path=solution[p]
-        drone_color=drone_colors[p]
+        drone_color=paths_colors[p]
         if len(drone_path)>1:
             i=0
             while i < len(drone_path)-1:
@@ -213,53 +223,147 @@ def create_graph(solution):
 
 def concat_drone_paths(solution,node):
     
-    drone_paths=[path for path in solution if solution.index(path)!=0 and len(path)>0]
+    drone_paths=[path for path in solution if path!=solution[0] and len(path)>0]
 
     paths_to_concat=[path for path in drone_paths if path[0]==node or path[-1]==node]
-    if len(paths_to_concat)<2:
-        print_graph_for_debug(solution)
-    path_to_concat_index_1=solution.index(paths_to_concat[0])
-    path_to_concat_index_2=solution.index(paths_to_concat[1])
-    if paths_to_concat[0][-1]==paths_to_concat[1][-1]:
-        paths_to_concat[1].reverse()
-    if paths_to_concat[0][0]==paths_to_concat[1][0]:
-        paths_to_concat[0].reverse()
-    if paths_to_concat[0][0]==paths_to_concat[1][-1]:
-        paths_to_concat[0].reverse()
-        paths_to_concat[1].reverse()
+    #se len==1 significa che provo a togliere uno dei 2 nodi di arrivo/partenza di UN SOLO path del drone
+    if len(paths_to_concat)>2:
+    #print_graph_for_debug(solution)
+        print(paths_to_concat)
+    if len(paths_to_concat)==1:
+        path_to_concat_index_1=solution.index(paths_to_concat[0])
+        path_to_concat_index_2=-1
+        path_to_extend=paths_to_concat[0]
+        truck_path=solution[0]
+        
+        possible_reunion_nodes=[]
+        old_reunion_nodes=[path_to_extend[0],path_to_extend[-1]]
+        #se sto testando la possibilità di concatenare
+        if node_degree(solution,old_reunion_nodes[0])>1 and node_degree(solution,old_reunion_nodes[1])>1:
 
-    concatenate_paths=paths_to_concat[0]+paths_to_concat[1]
-    #rimuovo il nodo , che sarà presente 2 volte
-    concatenate_paths.remove(node)
+            #controllo quale viene prima cosi so quali nodi prendere
+            possible_reunion_nodes=compute_possible_reunion_nodes(solution,old_reunion_nodes)
+            if len(possible_reunion_nodes)>0:
+                best_reunion=min(possible_reunion_nodes,key=lambda x:dist_drone[x][node])
+        #se voglio effetivamente effettuare l estensione
+        else:
+            if node==path_to_extend[0]:
+                reunion_node=path_to_extend[-1]
+                reunion_node_index=truck_path.index(reunion_node)
+                #concatenate_paths = [new_start_node] + path_to_extend
+            elif node==path_to_extend[-1]:
+                reunion_node=path_to_extend[0]
+                reunion_node_index=truck_path.index(reunion_node)
+                #concatenate_paths = path_to_extend + [new_start_node]
+
+            if reunion_node_index==0:
+                next_node=truck_path[reunion_node_index+1]
+                prev_node=truck_path[-1]
+            elif reunion_node_index==len(truck_path)-1:
+                next_node=truck_path[0]
+                prev_node=truck_path[reunion_node_index-1]
+            else:
+                next_node=truck_path[reunion_node_index+1]
+                prev_node=truck_path[reunion_node_index-1]
+            
+            if node_degree(solution, next_node)<4 and edge_free(solution,reunion_node,next_node):
+                possible_reunion_nodes.append(next_node)
+            if node_degree(solution, prev_node)<4 and edge_free(solution,reunion_node,prev_node):
+                possible_reunion_nodes.append(prev_node)
+            if len(possible_reunion_nodes)>0:
+                best_reunion=min(possible_reunion_nodes,key=lambda x:dist_drone[x][node])
+
+        if len(possible_reunion_nodes)>0:
+            
+            if node==path_to_extend[0]:
+                concatenate_paths = [best_reunion] + path_to_extend
+            elif node==path_to_extend[-1]:
+                concatenate_paths = path_to_extend + [best_reunion]
+        elif len(possible_reunion_nodes)==0:
+            return False,False
+
+    #se len==2 significa che provo a togliere uno dei 2 nodi di arrivo/partenza di DUE path del drone
+    if len(paths_to_concat)==2:
+        path_to_concat_index_1=solution.index(paths_to_concat[0])
+        path_to_concat_index_2=solution.index(paths_to_concat[1])
+        if paths_to_concat[0][-1]==paths_to_concat[1][-1]:
+            paths_to_concat[1].reverse()
+        if paths_to_concat[0][0]==paths_to_concat[1][0]:
+            paths_to_concat[0].reverse()
+        if paths_to_concat[0][0]==paths_to_concat[1][-1]:
+            paths_to_concat[0].reverse()
+            paths_to_concat[1].reverse()
+
+        concatenate_paths=paths_to_concat[0]+paths_to_concat[1]
+        #rimuovo il nodo , che sarà presente 2 volte
+        concatenate_paths.remove(node)
+
     cost=compute_path_drone_cost(concatenate_paths)
     weight=compute_drone_weight(concatenate_paths)
     
-    for node in concatenate_paths:
-        if concatenate_paths.count(node)>1:
-            print_graph_for_debug(solution)
     if(cost>drone_autonomy or weight>drone_capacity):
         return False,False
     else:
         output=[concatenate_paths,path_to_concat_index_1,path_to_concat_index_2]
         return True,output
 
-def compute_legal_inputs_nodes(solution,path_index):
-    illegal_inputs_nodes=[]
+def compute_possible_reunion_nodes(solution,old_reunion_nodes):
     
+    truck_path=solution[0]
+    reunion0_index=truck_path.index(old_reunion_nodes[0])
+    reunion1_index=truck_path.index(old_reunion_nodes[1])
+    possible_reunion_nodes=[]
+
+    if (reunion0_index==0 and reunion1_index==1) or (reunion0_index==1 and reunion1_index==0):
+        if edge_free(solution,truck_path[-1],truck_path[0]):
+            possible_reunion_nodes.append(truck_path[-1])
+        if edge_free(solution,truck_path[1],truck_path[2]):
+            possible_reunion_nodes.append(truck_path[2])
+
+    elif (reunion0_index==len(truck_path)-1 and reunion1_index==0) or (reunion0_index==0 and reunion1_index==len(truck_path)-1):
+        if edge_free(solution,truck_path[-1],truck_path[-2]):
+            possible_reunion_nodes.append(truck_path[-2])
+        if edge_free(solution,truck_path[0],truck_path[1]):
+            possible_reunion_nodes.append(truck_path[1])
+       
+    elif (reunion0_index==len(truck_path)-2 and reunion1_index==len(truck_path)-1) or (reunion0_index==len(truck_path)-1 and reunion1_index==len(truck_path)-2):
+        if edge_free(solution,truck_path[-3],truck_path[-2]):
+            possible_reunion_nodes.append(truck_path[-3])
+        if edge_free(solution,truck_path[-1],truck_path[0]):
+            possible_reunion_nodes.append(truck_path[0])
+
+    elif reunion0_index < reunion1_index: 
+        if edge_free(solution,truck_path[reunion0_index-1],truck_path[reunion0_index]):
+            possible_reunion_nodes.append(truck_path[reunion0_index-1])
+        if edge_free(solution,truck_path[reunion1_index],truck_path[reunion1_index+1]):
+            possible_reunion_nodes.append(truck_path[reunion1_index+1])
+    
+    elif reunion1_index < reunion0_index:
+        if edge_free(solution,truck_path[reunion0_index],truck_path[reunion0_index+1]):
+            possible_reunion_nodes.append(truck_path[reunion0_index+1])
+            if edge_free(solution,truck_path[reunion1_index-1],truck_path[reunion1_index]):
+                possible_reunion_nodes.append(truck_path[reunion1_index-1])
+        
+    for node in possible_reunion_nodes:
+        if node_degree(solution, node)>3:
+            possible_reunion_nodes.remove(node)
+    # if len(possible_reunion_nodes)==0:
+    #     print_graph_for_debug_NEW(solution)
+    return possible_reunion_nodes
+
+def compute_legal_inputs_nodes(solution,path_index):
+    illegal_inputs_nodes=[starting_node]
     
     path=solution[path_index]
 
     #se e un path del dronbe
-
     if path_index!=0 and len(path)>2:
         illegal_inputs_nodes.append(path[0])
         illegal_inputs_nodes.append(path[-1])
     if path_index==0:
         for node in path:
             #il nodod de truck é illegale se ha grado >2 e non posso fondere i 2 cicli che gli arrivano
-            if node_degree(solution,node)==3:
-                illegal_inputs_nodes.append(node)
-            if node_degree(solution,node)==4:
+            if node_degree(solution,node)>2:
                 concat_res,out=concat_drone_paths(solution,node)
                 if concat_res==False:
                     illegal_inputs_nodes.append(node)
@@ -273,8 +377,34 @@ def add_node_shortest_detour(solution, legal_output_paths_index, node_input):
     #cerco il posto migliore per inserire il nodo, tale che il detour sia minimo
     
     diff_min=100000000000
+
+    #se il path é nuovo controllo se l"arco é libero e se i nodi non sono pieni
+    
+
     for path_output_index in legal_output_paths_index:
         path=solution[path_output_index]
+
+        if len(path)==0:
+            truck_edges=compute_path_edges(solution,0)
+            for edge in truck_edges:
+                node1=edge[0]
+                node2=edge[1]
+                if edge_free(solution,node1,node2):
+                    #and node_degree(solution,node1)<4 and node_degree(solution,node2)<4:
+                    edge=[node1,node2,"New"]
+                    new_edges_cost=(dist_drone[node_input][node1]) + (dist_drone[node_input][node2]) 
+                    #penalizzo la creazione di nuovi path
+                    actual_diff=new_edges_cost+100
+                    actual_cost=new_edges_cost
+                    actual_weight=weights_dict[node_input]
+                    if actual_weight>drone_capacity:
+                        #se aggiungom questo nodo al path , indipendentemente da quale punto lo andrò ad aggiungre, supero la capacità
+                        #sono nel caso inn cui sarebbe l"unico nodo del path, quindi il peso del singolo nodo é maggiore della capacità
+                        break
+                    if (actual_diff<diff_min and actual_cost<=drone_autonomy):                     
+                        diff_min=actual_diff
+                        min_path_index=path_output_index
+                        min_edge=edge  
 
         path_edges=compute_path_edges(solution,path_output_index)
         #scorro gli archi
@@ -313,23 +443,7 @@ def add_node_shortest_detour(solution, legal_output_paths_index, node_input):
                 min_path_index=path_output_index
                 min_edge=edge
 
-            #se invece il path é nuovo controllo se l"arco é libero e se i nodi non sono pieni
-            if len(path)==0 and edge_free(solution,node1,node2) and node_degree(solution,node1)<4 and node_degree(solution,node2)<4:
-                edge=[node1,node2,"New"]
-                new_edges_cost=(dist_drone[node_input][node1]) + (dist_drone[node_input][node2]) 
-                actual_diff=new_edges_cost+100
-                actual_cost=new_edges_cost
-                actual_weight=weights_dict[node_input]
-                if actual_weight>drone_capacity:
-                    #se aggiungom questo nodo al path , indipendentemente da quale punto lo andrò ad aggiungre, supero la capacità
-                    #sono nel caso inn cui sarebbe l"unico nodo del path, quindi il peso del singolo nodo é maggiore della capacità
-                    break
-                if (actual_diff<diff_min and actual_cost<=drone_autonomy):
-                    #penalizzo la creazione di nuovi path
-                    diff_min=actual_diff
-                    min_path_index=path_output_index
-                    min_edge=edge
-
+            
     
 
     #se non ho trovato un modo per aggiungere il nodo
@@ -359,7 +473,6 @@ def mutation_1(solution,path_input_index,node_input_index,legal_output_paths_ind
     path_input=solution[path_input_index]
     node_input=path_input[node_input_index]
     #rimuovo il nodo dal grafo, e se il percorso ha solo due nodi allora lo elimino
-    #print_graph_for_debug(solution)
     path_input.pop(node_input_index)
     if len(path_input)<3:
         path_input.clear()
@@ -369,22 +482,24 @@ def mutation_1(solution,path_input_index,node_input_index,legal_output_paths_ind
     if(node_degree(solution,node_input)>0):
         node_concat=True
         #sistemo i path del drone
-        #print_graph_for_debug(solution)
+
         res,concat_output=concat_drone_paths(solution,node_input)
         first_path_index=concat_output[1]
         second_path_index=concat_output[2]
+        
         total_path=concat_output[0]
+    
         solution[first_path_index]=total_path
-        solution[second_path_index].clear()
+        
+        if second_path_index!=-1:
+            solution[second_path_index].clear()
            
 
     #se aggiungessi nel miglior modo il nodo ed avevo concatenato, lo troverei visitato 2 volte
     if(node_concat==False):
         add_node_shortest_detour(solution, legal_output_paths_index, node_input)
 
-
-def population_mutation(population,best_sol_i):
-    best_sol=population[best_sol_i]
+def population_mutation(population,best_sol):
     to_be_mutated_list=[]
     all_mutated_list=[]
 
@@ -402,13 +517,14 @@ def population_mutation(population,best_sol_i):
                             print_graph_for_debug(solution)
                         node_index=path.index(node)
                         probability_node=random.random() 
-                        if(probability_node>0.995):
+                        if(probability_node>NODE_PROBABILITY_FOR_MUTATION):
                             value=[path_index,node_index]
                             to_be_mutated_list.append(value)
 
 
             
             while(len(to_be_mutated_list)>0):
+
                 value_index=to_be_mutated_list.pop()
                 path_input_index=value_index[0]
                 node_input_index=value_index[1]
@@ -418,6 +534,8 @@ def population_mutation(population,best_sol_i):
                     node_input=path[node_input_index]
                     #calcolo i nodi che possono essere rimossi dal path senza problemi 
                     legal_inputs_nodes=compute_legal_inputs_nodes(solution,path_input_index)
+                    if starting_node in legal_inputs_nodes:
+                        print(legal_inputs_nodes)
 
                     #se il nodo la cui probabilità mi dice di rimoverlo é nella lista dei nodi legali
                     if node_input in legal_inputs_nodes:
@@ -439,7 +557,15 @@ def population_mutation(population,best_sol_i):
                         #     copied_sol=solution.copy()
                         #     population.append(copied_sol)
                         #     copied_already=1
+                        
                         mutation_1(solution,path_input_index,node_input_index,legal_output_paths_index)
+                        for path in solution:
+                            for node in path:
+                                if node_degree(solution,node)>4:
+                                    print(solution,path_input_index,node_input_index,legal_output_paths_index)
+                                    print(node)
+                                    print_graph_for_debug(solution)
+                    
 
             
         
@@ -534,7 +660,6 @@ def remove_double_visited_nodes(solution):
         
         for node in to_be_removed:
             path.remove(node)
-        # print_graph_for_debug(solution)
 
 
 def return_double_visited_nodes(solution):
@@ -803,7 +928,9 @@ def population_crossover(population):
     fitness_wheel=compute_fitness_wheel(population)
     parents=random.choices(population,weights=fitness_wheel,k=2)
     parents_index=[population.index(parent) for parent in parents]
+    
     solutions_crossover(population,parents_index[0],parents_index[1])
+  
     
     
 def eliminate_worst1(population):
@@ -829,14 +956,15 @@ def GA(population):
         costs.append(compute_solution_cost(solution))
     best_cost=min(costs)
     best_sol_i=costs.index(best_cost)
+    best_sol=population[best_sol_i]
     i=0
-    while i<200:
+    while i<INTERNAL_ITERATIONS:
         
         start=time.time()
  
         population_crossover(population)
 
-        population_mutation(population,best_sol_i)
+        population_mutation(population,best_sol)
 
         eliminate_worst1(population)
         eliminate_worst1(population)
@@ -847,14 +975,15 @@ def GA(population):
         minim=min(test_costs)
         if minim<best_cost:
             best_sol_i=test_costs.index(minim)
+            best_sol=population[best_sol_i]
             best_cost=minim
             # print(multiprocessing.current_process(),"     ",best_sol_i,best_cost," i:",i,"tempo:",time.time()-start)
         i+=1
         # print(multiprocessing.current_process(),"      i:",i,"lunghezza population:",len(population)," tempo:",time.time()-start)
-    return population
+    return population,best_sol,best_cost
 
-drone_colors=['red','#3F00FF','#00EB2D','#DDD900','#3C350A','#A1B1F8','#9DFD83','#8CFF00',\
-'#C6FF00','#0040FE','#5B998D','#A36CB1 ','#687044','#B391CB','#27670C']
+paths_colors=['red','#F7AE5D','#5B998D','#DDD900','#928017','#A1B1F8','#9DFD83','#408446',\
+'#C7DA88','#0040FE','#A520A5','#A36CB1 ','#687044','#B391CB','#46822D']
 figure=plt.figure(figsize=(9.5,9.5))
 start=time.time()
 #Creazione grafi e lettura files dei grafi
@@ -864,7 +993,7 @@ graph_drone_clear = Custom_Graph()
 
 #----------Inizio lettura coordinate e inserimento nel grafo e distanze drone-------------
 
-filename = 'Posizione_nodi_DRONE.txt'      #nome file puntatore
+filename = 'Posizioni_clienti.txt'      #nome file puntatore
 with open(filename, 'r') as f:
     data = f.read()
 
@@ -944,6 +1073,14 @@ drone_capacity=int(drone_capacity)
 
 
 
+INTERNAL_ITERATIONS=1000
+MAX_POPULATION_SIZE=100
+OUTER_ITERATIONS=5
+NODE_PROBABILITY_FOR_MUTATION=0.99
+
+
+
+
 if __name__ == '__main__':
     print("starting node = ",starting_node)
     print("drone autonomy = ",drone_autonomy)
@@ -960,57 +1097,76 @@ if __name__ == '__main__':
     costs=[]  
     for solution in population:
         costs.append(compute_solution_cost(solution))
+        #print_graph_for_debug(solution)
     minim=min(costs)
     initial_best_index=costs.index(minim)
     initial_best_cost=minim
-    
-    print(time.time()-start," secs per creare e rimuovre i duplicati di soluzioni") 
+    print("costo sol prima di local=", initial_best_cost)
     
     #endregion
 
     
     
-    #prima creo una poploazione di X sol
-    while len(population)<100:
+    #prima creo una poploazione di 100 sol
+    start2=time.time()
+    while len(population)<50:
         #CROSSOVER
         population_crossover(population)
 
-    
+    print("inizio il calcolo con ",multiprocessing.cpu_count()," processori\n")
+ 
     start=time.time()
-
-    j=0
-    while j < 100:
+    
+    pbar=tqdm (range(OUTER_ITERATIONS), desc=str(multiprocessing.cpu_count())+" Populations Evolving... best cost = "+str(initial_best_cost)+"  pop size: "+str(len(population)),bar_format='{l_bar}{bar:70}{r_bar}{bar:-10b}')
+    for j in pbar:
         #poi faccio partire
         start=time.time()
-        populations_repeated=[population.copy() for i in range(6)]
+        populations_repeated=[population for i in range(14)]
+
         with Pool() as pool:
-            new_populations=populations_output=pool.map(GA,populations_repeated)
-        print("6 popolazioni evolute parallalemente in: ",time.time()-start," secondi")
-        costs=[]
-        for pop in new_populations:
-            for solution in pop:
-                costs.append(compute_solution_cost(solution))
-        minim=min(costs)
-        print("TROVATO",costs.index(minim),minim," in ",len(costs)," soluzioni")
-        new_population_dup=list(chain.from_iterable(new_populations))
+            populations_output=pool.map(GA,populations_repeated)
+        time_for_1_cycle=time.time()-start
+        cycles_remaining=OUTER_ITERATIONS-j
+        percentagemi=round(j*100/OUTER_ITERATIONS,2)
+        #i primi ciclo é sballato come tempisitche
+        #if j>1:
+            #print(percentagemi,"%, tempo rimanente:",time_for_1_cycle*cycles_remaining," secondi")
         
+        new_populations=[]
+        new_best_solutions=[]
+        new_best_costs=[]
+        
+        for x in populations_output:
+            new_populations.append(x[0])
+            new_best_solutions.append(x[1])
+            new_best_costs.append(x[2])
+        
+        new_population_dup=list(chain.from_iterable(new_populations))
+        minim=min(new_best_costs)
+       
         start1=time.time()
-        eliminate_worsts(new_population_dup,300)
-        print("lunghezza popolazinone dopo aver eliminato i peggiori: ",len(new_population_dup))
-        population=new_population_dup
-        # population=[]
-        # for solution in new_population_dup:
-        #     if not solution_duplicated(population,solution):
-        #         population.append(solution)
-        # print("lunghezza popolazinone dopo aver eliminato i duplicati: ",len(population))
-        print("tra elim e rimoz dup ci ho messo ",time.time()-start1)
+        eliminate_worsts(new_population_dup,MAX_POPULATION_SIZE)
+        # print("lunghezza popolazinone dopo aver eliminato i peggiori: ",len(new_population_dup))
+        # population=new_population_dup
+        population=[]
+        for solution in new_population_dup:
+            if not solution_duplicated(population,solution):
+                population.append(solution)    
+        pbar.set_description(str(multiprocessing.cpu_count())+" Populations Evolving... best cost = "+str(initial_best_cost)+"  pop size: "+str(len(new_population_dup)))
+        # print("tra elim e rimoz dup ci ho messo ",time.time()-start1)
 
 
-    print(time.time()-start," generate 2000 sol")
+
+    print("\n",time.time()-start2," secondi trascorsi per finire")
     costs=[]
     for solution in population:
         costs.append(compute_solution_cost(solution))
     minim=min(costs)
-    print("prijma della local avevo come migliore: ",initial_best_index, " con costo: ", initial_best_cost)
-    print("TROVATO",costs.index(minim),minim)
-    #print_graph_for_debug(costs.index(minim))
+    print("prima della local avevo come costo migliore: ", initial_best_cost)
+    print("TROVATO IL MIGLIORE:",costs.index(minim),minim)
+    print("INTERNAL_ITERATIONS:",INTERNAL_ITERATIONS)
+    print("MAX_POPULATION_SIZE:",MAX_POPULATION_SIZE)
+    print("OUTER_ITERATIONS:",OUTER_ITERATIONS)
+    print("NODE_PROBABILITY_FOR_MUTATION:",NODE_PROBABILITY_FOR_MUTATION)
+    solution_best=population[costs.index(minim)]
+    print_graph_for_debug(solution_best)

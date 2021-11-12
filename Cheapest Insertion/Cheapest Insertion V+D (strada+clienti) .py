@@ -224,7 +224,7 @@ def compute_drone_cost_new(trip_number):
         # controllo se entrambi i 2 nodi sono stati visitati in questo ciclo
         if ((any(x.index == node1 and x.trip_number==trip_number for x in visited_list_drone)) and (any(y.index == node2  and y.trip_number==trip_number for y in visited_list_drone))):  
             #se entrambi i nodi non sono visitati dal truck(arco iniziale)
-            if (node1 not in visited_list_truck_indexes and node2 not in visited_list_truck_indexes):
+            if not (node1  in visited_list_truck_indexes and node2  in visited_list_truck_indexes):
                 cost+=dist_drone[node1][node2]
                 #print(node1,node2,dist_drone[node1][node2],cost)
     return cost
@@ -341,7 +341,9 @@ def drone_Cheapest_trip():
 
 
         #ripercorro il ciclo best
+
         while(cost<=drone_autonomy and weight<=drone_capacity and len(visited_list_indexes)<client_number):
+
             best_node_index,node1_start_best,node2_start_best=find_best_edge(graph_drone,dist_drone,trip_counter_best)
             #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
             #quindi lo aggiungo e rimuovo l edge corrispondente SOLO SE NON SUPERO I VINCOLI
