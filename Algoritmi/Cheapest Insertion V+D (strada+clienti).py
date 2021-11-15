@@ -10,6 +10,8 @@ import numpy as np
 from typing import Any, List
 import time
 import json
+from tqdm import tqdm
+from statistics import mean
 
 
 start = time.time()
@@ -575,7 +577,6 @@ istance.close()
 #endregion
 #endregion
 
-
 #Decido il nodo di partenza, ovvero il nostro deposito. 
 starting_node = 29
 drone_autonomy = 35
@@ -583,137 +584,154 @@ drone_capacity = 300
 paths_colors=['red','#7C69FF','#00EB2D','#DDD900','#928017','#A1B1F8','#9DFD83','#8CFF00',\
 '#C6FF00','#0040FE','#5B998D','#A36CB1 ','#687044','#B391CB','#27670C']
 figure=plt.figure(figsize=(9.5,9.5))
-
-inputs=[w/10 for w in range(-40,-10,5)]+\
-       [w/10 for w in range(-10,-5,2)]+\
-       [w/10 for w in range(-5,5,1)]+\
-       [w/10 for w in range(5,10,2)]+\
-       [w/10 for w in range(10,40,5)]
-    
-
-
 results_dic={}
 population=[]
+
+inputs=[w/10 for w in range(-40,-10,5)]+\
+    [w/10 for w in range(-10,-5,2)]+\
+    [w/10 for w in range(-5,5,1)]+\
+    [w/10 for w in range(5,10,2)]+\
+    [w/10 for w in range(10,40,5)]
+    
+ab_list=[]
 for alpha in inputs:
     for beta in inputs:
-        
-        print(alpha,beta)
-        solution=[]
-        #rimuovo gli archi creati ai cicli precedenti(parto da un grafo nuovo)
-        graph_truck.remove_edges_from(list(graph_truck.edges))
-        graph_drone.remove_edges_from(list(graph_drone.edges))
+        key1=[alpha,beta]
+        ab_list.append(key1)
 
-        #Decido il nodo di partenza, ovvero il nostro deposito. 
-        truck_node_index = starting_node
+desc="Trying different values... alpha="+str(inputs[0])+" beta="+str(inputs[0])+"   "
+desc_len=len(desc)
+pbar=tqdm(ab_list, desc=desc,leave=True,bar_format='{l_bar}{bar:40}{r_bar}{bar:-10b}')
+for key in pbar:
+    alpha=key[0]
+    beta=key[1]
+    desc="Trying different values... alpha="+str(alpha)+" beta="+str(beta)+"  "
+    while len(desc)!=desc_len:
+        if len(desc)<desc_len:
+            desc+=" "
+        if len(desc)>desc_len:
+            desc=desc[:-1]
+    pbar.set_description(desc)
 
-        #Dichiaro la lista dei nodi visitati durante l'algoritmo
-        visited_list_indexes = [starting_node]
-        #Dichiaro la lista dei nodi visitati dal truck durante l'algoritmo
-        visited_list_truck_indexes = [starting_node]
-        drone_cycle_number=0
-        cost = 0    #costo iniziale del veicolo
-        drone_on_truck=1
+    solution=[]
+    #rimuovo gli archi creati ai cicli precedenti(parto da un grafo nuovo)
+    graph_truck.remove_edges_from(list(graph_truck.edges))
+    graph_drone.remove_edges_from(list(graph_drone.edges))
+
+    #Decido il nodo di partenza, ovvero il nostro deposito. 
+    truck_node_index = starting_node
+
+    #Dichiaro la lista dei nodi visitati durante l'algoritmo
+    visited_list_indexes = [starting_node]
+    #Dichiaro la lista dei nodi visitati dal truck durante l'algoritmo
+    visited_list_truck_indexes = [starting_node]
+    drone_cycle_number=0
+    cost = 0    #costo iniziale del veicolo
+    drone_on_truck=1
 
 
-        visited_list_drone=[]
-        truck_locked_edges=[]
+    visited_list_drone=[]
+    truck_locked_edges=[]
 
-        # counter per i viaggi dell drone, anche quelli che poi annullo
-        drone_trip_counter=0
-        
+    # counter per i viaggi dell drone, anche quelli che poi annullo
+    drone_trip_counter=0
+    
 
-        # conto quanti clienti fa il drone
-        drone_clients_counter=0
+    # conto quanti clienti fa il drone
+    drone_clients_counter=0
 
-        #-------FINE INIZIALIZZAZIONE-------
+    #-------FINE INIZIALIZZAZIONE-------
 
 
-        #INIZIO CODICE
-        #Creo la lista con le distanze dei vicini
-        neighbors_distance = [0]
-        for i in range(1, client_number_range): 
-            neighbors_distance.append(dist_drone[truck_node_index][i])
-        #Inserisco in nearest_index il nodo più vicino al truck
-        nearest_index = nearest_node(neighbors_distance, visited_list_indexes)
-        graph_truck.add_edge(truck_node_index,nearest_index,length=round(dist_truck[truck_node_index][nearest_index],2),color='r')
+    #INIZIO CODICE
+    #Creo la lista con le distanze dei vicini
+    neighbors_distance = [0]
+    for i in range(1, client_number_range): 
+        neighbors_distance.append(dist_drone[truck_node_index][i])
+    #Inserisco in nearest_index il nodo più vicino al truck
+    nearest_index = nearest_node(neighbors_distance, visited_list_indexes)
+    graph_truck.add_edge(truck_node_index,nearest_index,length=round(dist_truck[truck_node_index][nearest_index],2),color='r')
+    visited_list_truck_indexes=compute_visited_list_truck()
+    visited_list_indexes=compute_visited_list()
+
+    #ciclo esterno del truck
+    first_time=1
+    last_node=0
+
+    while(len(visited_list_indexes)<client_number):
+        sub_clients_counter=0
+        drone_returned=False
+        #CHEAPEST INSERTION TRUCK
+        #controllo se il truck può fare solo un nodo: sono gia ad almeno un nodo, quindi aggiungo l arco piu conveniente    
+        best_node_index,node1_best,node2_best=find_best_edge(graph_truck,dist_truck,-1)
+
+        #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
+        #quindi lo aggiungo e rimuovo l edge corrispondente
+        graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='r')
+        graph_truck.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2),color='r')
+        visited_list_indexes.append(best_node_index)
         visited_list_truck_indexes=compute_visited_list_truck()
-        visited_list_indexes=compute_visited_list()
+        #rimuovo solo se non sono al 2 ciclo, senno per la storia del undirected eliminerei il primo arco
+        if(len(visited_list_truck_indexes)>3):
+            graph_truck.custom_remove_edge(node1_best,node2_best)
 
-        #ciclo esterno del truck
-        first_time=1
-        last_node=0
-
-        while(len(visited_list_indexes)<client_number):
-            sub_clients_counter=0
-            drone_returned=False
-            #CHEAPEST INSERTION TRUCK
-            #controllo se il truck può fare solo un nodo: sono gia ad almeno un nodo, quindi aggiungo l arco piu conveniente    
-            best_node_index,node1_best,node2_best=find_best_edge(graph_truck,dist_truck,-1)
-
-            #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
-            #quindi lo aggiungo e rimuovo l edge corrispondente
-            graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='r')
-            graph_truck.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2),color='r')
-            visited_list_indexes.append(best_node_index)
-            visited_list_truck_indexes=compute_visited_list_truck()
-            #rimuovo solo se non sono al 2 ciclo, senno per la storia del undirected eliminerei il primo arco
-            if(len(visited_list_truck_indexes)>3):
-                graph_truck.custom_remove_edge(node1_best,node2_best)
-
-            
-            #CICLO DEL DRONE
-            if(len(visited_list_indexes)<client_number):
-                drone_cycle_number+=1
-                drone_Cheapest_trip()
-
-            cost=compute_solution_cost(dist_truck)
-
-
-            
+        
+        #CICLO DEL DRONE
+        if(len(visited_list_indexes)<client_number):
+            drone_cycle_number+=1
+            drone_Cheapest_trip()
 
         cost=compute_solution_cost(dist_truck)
-        #print("Costo=",cost)
-        key=str(alpha)+" & "+str(beta)
-        results_dic[key]=cost
+
+
         
 
-        #Aggiungo alla lista per GA
-        truck_path=[]
-        nodeA=visited_list_truck_indexes.pop(0)
-        truck_path.append(nodeA)
-        while(len(visited_list_truck_indexes)>0):
-            nodeA_neighbours=[node2 for node1,node2 in graph_truck.edges() if node1==nodeA and node2 not in truck_path]+[node1 for node1,node2 in graph_truck.edges() if node2==nodeA and node1 not in truck_path]
+    cost=compute_solution_cost(dist_truck)
+    #print("Costo=",cost)
+    key=str(alpha)+" & "+str(beta)
+    results_dic[key]=cost
+        
+    #Aggiungo alla lista per GA
+    truck_path=[]
+    nodeA=visited_list_truck_indexes.pop(0)
+    truck_path.append(nodeA)
+    while(len(visited_list_truck_indexes)>0):
+        nodeA_neighbours=[node2 for node1,node2 in graph_truck.edges() if node1==nodeA and node2 not in truck_path]+[node1 for node1,node2 in graph_truck.edges() if node2==nodeA and node1 not in truck_path]
+        next_node=nodeA_neighbours[0]
+        visited_list_truck_indexes.remove(next_node)
+        truck_path.append(next_node)
+        nodeA=next_node
+        
+    solution.append(truck_path)
+
+    trip_counters=[node.trip_number for node  in visited_list_drone]
+    trip_counters=list(set(trip_counters))
+
+    
+    for trip in trip_counters:
+        drone_path=[]
+        visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==trip]
+        nodeA=visited_list_drone_this_trip.pop(0)
+        drone_path.append(nodeA)
+        while(len(visited_list_drone_this_trip)>0):
+            nodeA_neighbours=[node2 for node1,node2 in graph_drone.edges() if node1==nodeA and node2 in visited_list_drone_this_trip and node2 not in drone_path]+\
+                [node1 for node1,node2 in graph_drone.edges() if node2==nodeA and node1 in visited_list_drone_this_trip and node1 not in drone_path]
+
             next_node=nodeA_neighbours[0]
-            visited_list_truck_indexes.remove(next_node)
-            truck_path.append(next_node)
+            visited_list_drone_this_trip.remove(next_node)
+            drone_path.append(next_node)
             nodeA=next_node
-        
-        solution.append(truck_path)
+        solution.append(drone_path)
+    
+    #riempio di spazi vuoti
+    while(len(solution)<15):
+        solution.append([])
 
-        trip_counters=[node.trip_number for node  in visited_list_drone]
-        trip_counters=list(set(trip_counters))
+    population.append(solution)
 
-        
-        for trip in trip_counters:
-            drone_path=[]
-            visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==trip]
-            nodeA=visited_list_drone_this_trip.pop(0)
-            drone_path.append(nodeA)
-            while(len(visited_list_drone_this_trip)>0):
-                nodeA_neighbours=[node2 for node1,node2 in graph_drone.edges() if node1==nodeA and node2 in visited_list_drone_this_trip and node2 not in drone_path]+\
-                    [node1 for node1,node2 in graph_drone.edges() if node2==nodeA and node1 in visited_list_drone_this_trip and node1 not in drone_path]
+key_migliore=min(results_dic, key = lambda k: results_dic[k])
+migliore_valore=results_dic[key_migliore]
 
-                next_node=nodeA_neighbours[0]
-                visited_list_drone_this_trip.remove(next_node)
-                drone_path.append(next_node)
-                nodeA=next_node
-            solution.append(drone_path)
-        
-        #riempio di spazi vuoti
-        while(len(solution)<15):
-            solution.append([])
-
-        population.append(solution)
         
 #scrivo su file i risultati
 with open('GA_input.txt', 'w') as GA_input:
@@ -723,8 +741,7 @@ with open('GA_input.txt', 'w') as GA_input:
     json.dump(population, GA_input)
 
 
-key_migliore=min(results_dic, key = lambda k: results_dic[k])
-migliore_valore=results_dic[key_migliore]
+
 
 with open('aaaaa.txt', 'w') as aaa:
     for key, value in results_dic.items():

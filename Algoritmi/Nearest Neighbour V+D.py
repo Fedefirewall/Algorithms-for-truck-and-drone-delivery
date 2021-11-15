@@ -175,6 +175,7 @@ istanza.close()
 #dist_truck[25][13]=5
 #decido il nodo di partenza
 starting_node=29
+
 lista_pesi_pacchi[starting_node]=0
 
 #setto il peso del deposito=0
