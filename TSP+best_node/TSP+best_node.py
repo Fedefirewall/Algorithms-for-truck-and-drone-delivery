@@ -254,6 +254,7 @@ def nearest_node(neighbors_distance,visited_list_indexes):
                 min_index=actual_index
     return min_index
 
+#Funzione che controlla che i due nodi non siano nello stesso tour del drone
 def edge_free(solution,node1,node2):
 
     #entrambi i nodi sicuramente sono un arco, dato che li ho presi da graph_total.edges
@@ -269,6 +270,7 @@ def edge_free(solution,node1,node2):
     #non erano entrambi nel truck
     return False
 
+#Funzione che aggiunge il nodo del truck in un ciclo del drone nella posizione tale per cui il nuovo Detour si minimo
 def add_node_shortest_detour(solution, edges_full, node_input):
 
     min_path_index=-1
@@ -553,7 +555,8 @@ def compute_legal_inputs_nodes(solution,path_index):
     
     legal_inputs_nodes=[node for node in path if node not in illegal_inputs_nodes]
     return legal_inputs_nodes
-    
+
+#Funzione che trova i nodi migliori nel ciclo del truck     
 def find_best_node(solution):
     best_node=-1
     best_prev_node=-1
@@ -584,6 +587,7 @@ def find_best_node(solution):
             best_next_node=next_node
     return best_prev_node, best_node, best_next_node
 
+#Funzione che trova la coppia di nodi tali per cui l'arco sia di costo minimo
 def find_best_edge(graph, dist, trip_number):
     #per ogni coppia di nodi cercoil nodo con costo minore tale che la
     #somma dei nuovi archi sia minima
