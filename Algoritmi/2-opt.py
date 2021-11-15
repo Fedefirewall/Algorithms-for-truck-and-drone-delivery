@@ -162,36 +162,36 @@ def two_opt_drone(node1, node2, node3, node4, d_p, t_p, d_d):
                                 else:
                                     continue
                             continue
-                    if not any(t_p[node3] in sl for sl in drone_path):
-                        if not any(t_p[node4] in sl for sl in drone_path):
-                            print("Impossibile effettuare scambio del percorso del drone perchè nessuno dei due nodi dell'arco è attraversato dal drone.")
+                if not any(t_p[node3] in sl for sl in drone_path):
+                    if not any(t_p[node4] in sl for sl in drone_path):
+                        print("Impossibile effettuare scambio del percorso del drone perchè nessuno dei due nodi dell'arco è attraversato dal drone.")
+                        break
+                if t_p[node2] == drone_path[i][-1]:
+                    drone_path_new[i][-1] = t_p[node3]
+                    for k in range(0, len(drone_path_new[i])- 1):
+                        nodox = drone_path_new[i][k]
+                        nodoy = drone_path_new[i][k+1]
+                        cost_drone += d_d[nodox][nodoy]
+                        drone_weight += weights_dict[nodoy]
+                        if cost_drone > drone_autonomy or drone_weight > drone_capacity:
+                            #print("Il costo del nuovo percorso ", drone_path_new[i], cost_drone, " supera l'autonomia del drone per cui non va bene!!!")
+                            return drone_path_new, cost_drone, drone_weight
+                        else:
                             continue
-                    if t_p[node2] == drone_path[i][-1]:
-                        drone_path_new[i][-1] = t_p[node3]
-                        for k in range(0, len(drone_path_new[i])- 1):
-                            nodox = drone_path_new[i][k]
-                            nodoy = drone_path_new[i][k+1]
-                            cost_drone += d_d[nodox][nodoy]
-                            drone_weight += weights_dict[nodoy]
-                            if cost_drone > drone_autonomy or drone_weight > drone_capacity:
-                                #print("Il costo del nuovo percorso ", drone_path_new[i], cost_drone, " supera l'autonomia del drone per cui non va bene!!!")
-                                return drone_path_new, cost_drone, drone_weight
-                            else:
-                                continue
-                        continue
-                    elif t_p[node2] == drone_path[i][0]:
-                        drone_path_new[i][0] = t_p[node3]
-                        for k in range(0, len(drone_path_new[i])- 1):
-                            nodox = drone_path_new[i][k]
-                            nodoy = drone_path_new[i][k+1]
-                            cost_drone += d_d[nodox][nodoy]
-                            drone_weight += weights_dict[nodoy]
-                            if cost_drone > drone_autonomy or drone_weight > drone_capacity:
-                                #print("Il costo del nuovo percorso ", drone_path_new[i], cost_drone, " supera l'autonomia del drone per cui non va bene!!!")
-                                return drone_path_new, cost_drone, drone_weight
-                            else:
-                                continue
-                        continue
+                    continue
+                elif t_p[node2] == drone_path[i][0]:
+                    drone_path_new[i][0] = t_p[node3]
+                    for k in range(0, len(drone_path_new[i])- 1):
+                        nodox = drone_path_new[i][k]
+                        nodoy = drone_path_new[i][k+1]
+                        cost_drone += d_d[nodox][nodoy]
+                        drone_weight += weights_dict[nodoy]
+                        if cost_drone > drone_autonomy or drone_weight > drone_capacity:
+                            #print("Il costo del nuovo percorso ", drone_path_new[i], cost_drone, " supera l'autonomia del drone per cui non va bene!!!")
+                            return drone_path_new, cost_drone, drone_weight
+                        else:
+                            continue
+                    continue
         if t_p[node3] == drone_path[i][0] or t_p[node3] == drone_path[i][-1]:
             if t_p[node4] == drone_path[i][0] or t_p[node4] == drone_path[i][-1]:
                 cost_drone = 0
@@ -252,38 +252,37 @@ def two_opt_drone(node1, node2, node3, node4, d_p, t_p, d_d):
                                 else:
                                     continue
                             continue
+                if not any(t_p[node1] in sl for sl in drone_path):
                     if not any(t_p[node1] in sl for sl in drone_path):
-                        if not any(t_p[node1] in sl for sl in drone_path):
-                            print("Impossibile effettuare scambio del percorso del drone perchè nessuno dei due nodi dell'arco è attraversato dal drone.")
+                        print("Impossibile effettuare scambio del percorso del drone perchè nessuno dei due nodi dell'arco è attraversato dal drone.")
+                        break
+                if t_p[node3] == drone_path[i][-1]:
+                    drone_path_new[i][-1] = t_p[node2]
+                    for k in range(0, len(drone_path_new[i])- 1):
+                        nodox = drone_path_new[i][k]
+                        nodoy = drone_path_new[i][k+1]
+                        cost_drone += d_d[nodox][nodoy]
+                        drone_weight += weights_dict[nodoy]
+                        if cost_drone > drone_autonomy or drone_weight > drone_capacity:
+                            #print("Il costo del nuovo percorso ", drone_path_new[i], cost_drone, " supera l'autonomia del drone per cui non va bene!!!")
+                            return drone_path_new, cost_drone, drone_weight
+                        else:
                             continue
-                    if t_p[node3] == drone_path[i][-1]:
-                        drone_path_new[i][-1] = t_p[node2]
-                        for k in range(0, len(drone_path_new[i])- 1):
-                            nodox = drone_path_new[i][k]
-                            nodoy = drone_path_new[i][k+1]
-                            cost_drone += d_d[nodox][nodoy]
-                            drone_weight += weights_dict[nodoy]
-                            if cost_drone > drone_autonomy or drone_weight > drone_capacity:
-                                #print("Il costo del nuovo percorso ", drone_path_new[i], cost_drone, " supera l'autonomia del drone per cui non va bene!!!")
-                                return drone_path_new, cost_drone, drone_weight
-                            else:
-                                continue
-                        continue
-                    elif t_p[node3] == drone_path[i][0]:
-                        drone_path_new[i][0] = t_p[node2]
-                        for k in range(0, len(drone_path_new[i])- 1):
-                            nodox = drone_path_new[i][k]
-                            nodoy = drone_path_new[i][k+1]
-                            cost_drone += d_d[nodox][nodoy]
-                            drone_weight += weights_dict[nodoy]
-                            if cost_drone > drone_autonomy or drone_weight > drone_capacity:
-                                #print("Il costo del nuovo percorso ", drone_path_new[i], cost_drone, " supera l'autonomia del drone per cui non va bene!!!")
-                                return drone_path_new, cost_drone, drone_weight
-                            else:
-                                continue
-                        continue
-        
-                
+                    continue
+                elif t_p[node3] == drone_path[i][0]:
+                    drone_path_new[i][0] = t_p[node2]
+                    for k in range(0, len(drone_path_new[i])- 1):
+                        nodox = drone_path_new[i][k]
+                        nodoy = drone_path_new[i][k+1]
+                        cost_drone += d_d[nodox][nodoy]
+                        drone_weight += weights_dict[nodoy]
+                        if cost_drone > drone_autonomy or drone_weight > drone_capacity:
+                            #print("Il costo del nuovo percorso ", drone_path_new[i], cost_drone, " supera l'autonomia del drone per cui non va bene!!!")
+                            return drone_path_new, cost_drone, drone_weight
+                        else:
+                            continue
+                    continue
+
     return drone_path_new, cost_drone, drone_weight
 
 def two_opt_truck(node1, node2, node3, node4, t_p, d_t):
@@ -474,7 +473,7 @@ if __name__ == '__main__':
                         node4_switch_truck_index = node3_switch_truck_index + 1
                         print("Provo l'algoritmo 2-opt con l'arco: ", truck_path[node3_switch_truck_index], " -- ", truck_path[node4_switch_truck_index], "\nEd l'arco ", truck_path[node1_switch_truck_index], " -- ", truck_path[node2_switch_truck_index])
                         sol_drone, cost_new_drone, drone_weight_new = two_opt_drone(node1_switch_truck_index, node2_switch_truck_index, node3_switch_truck_index, node4_switch_truck_index, drone_path, truck_path, dist_drone)
-                        if cost_new_drone < drone_autonomy and drone_weight_new < drone_capacity:
+                        if cost_new_drone < drone_autonomy and drone_weight_new < drone_capacity and drone_weight_new != 0:
                             print("Il nuovo percorso del drone è: ", sol_drone)
                             sol_truck, cost_truck = two_opt_truck(node1_switch_truck_index, node2_switch_truck_index, node3_switch_truck_index, node4_switch_truck_index, truck_path, dist_truck)
                             if cost_truck < cost_truck_best:
@@ -504,7 +503,7 @@ if __name__ == '__main__':
                     else:
                         print("Provo l'algoritmo 2-opt con l'arco: ", truck_path[node1_switch_truck_index], " -- ", truck_path[node2_switch_truck_index], "\nEd l'arco ", truck_path[node3_switch_truck_index], " -- ", truck_path[node4_switch_truck_index])
                         sol_drone, cost_new_drone, drone_weight_new = two_opt_drone(node1_switch_truck_index, node2_switch_truck_index, node3_switch_truck_index, node4_switch_truck_index, drone_path, truck_path, dist_drone)
-                        if cost_new_drone <= drone_autonomy and drone_weight_new <= drone_capacity:
+                        if cost_new_drone <= drone_autonomy and drone_weight_new <= drone_capacity and drone_weight_new != 0:
                             sol_truck, cost_truck = two_opt_truck(node1_switch_truck_index, node2_switch_truck_index, node3_switch_truck_index, node4_switch_truck_index, truck_path, dist_truck)
                             print("Il nuovo percorso del drone è: ", sol_drone)
                             if cost_truck < cost_truck_best:
@@ -553,7 +552,15 @@ if __name__ == '__main__':
     #node3_switch_truck_index = 7
     #node4_switch_truck_index = 8
     print("La ricerca locale 2-opt ha trovato la soluzione: ", solution, "\ncon costo: ", cost_truck_best)
-    print("L'insieme di tutte le soluzioni migliorative trovate è: ", population)
+    
+    for path in solution:
+        if path == solution[0]:
+            print("Dove il truck percorre la seguente route --> ", path, "\n")
+        elif path == solution[1]:
+            print("Mentre il drone percorre le seguenti routes:\n", path)
+        else: 
+            print(path)
+    #print("L'insieme di tutte le soluzioni migliorative trovate è: ", population)
 
 
     #Scrivo sul file GA_input.txt la popolazione che dovrà andare in pasto all'algoritmo genetico. 
