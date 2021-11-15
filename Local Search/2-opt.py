@@ -451,7 +451,7 @@ if __name__ == '__main__':
     
     truck_path.append(truck_path[0])
     #SCORRO TUTTI GLI ARCHI E NE FACCIO 2-OPT DOVE è POSSIBILE
-
+    population = []  #Popolazione che darò in pasto all'algoritmo genetico 
     i = 0
     while i < (len(truck_path) - 1):
         for j in range(0, len(truck_path) - 1):
@@ -492,7 +492,8 @@ if __name__ == '__main__':
                                 solution.append(sol_truck)
                                 for element in sol_drone:
                                     solution.append(element)
-                            
+                                
+                                population.append(solution)    #Aggiorno la popolazione con il nuovo miglioramento trovato                           
                                 print_graph_for_debug(solution)
                             else:
                                 print("Il nuovo percorso del truck non va bene perchè ha costo: ", cost_truck)
@@ -522,6 +523,7 @@ if __name__ == '__main__':
                                 for element in sol_drone:
                                     solution.append(element)
 
+                                population.append(solution)    #Aggiorno la popolazione con il nuovo miglioramento trovato
                                 print_graph_for_debug(solution)
                             else:
                                 print("Il nuovo percorso del truck non va bene perchè ha costo: ", cost_truck)
@@ -551,3 +553,14 @@ if __name__ == '__main__':
     #node3_switch_truck_index = 7
     #node4_switch_truck_index = 8
     print("La ricerca locale 2-opt ha trovato la soluzione: ", solution, "\ncon costo: ", cost_truck_best)
+    print("L'insieme di tutte le soluzioni migliorative trovate è: ", population)
+
+
+    #Scrivo sul file GA_input.txt la popolazione che dovrà andare in pasto all'algoritmo genetico. 
+    with open('GA_input.txt', 'w') as GA_input:
+        GA_input.writelines(str(starting_node)+"\n")
+        GA_input.writelines(str(drone_autonomy)+"\n")
+        GA_input.writelines(str(drone_capacity)+"\n")
+        json.dump(population, GA_input)
+
+    print_graph_for_debug(solution)
