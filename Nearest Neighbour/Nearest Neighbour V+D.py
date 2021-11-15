@@ -367,9 +367,12 @@ with open('2_OPT_input.txt', 'w') as Two_opt_input:
 
 visited_list_truck=solution[0]
 cost=compute_solution_cost(visited_list_truck)
+
 print("Nodo di partenza: "+str(starting_node))
 print("Costo: ",cost) #costo Truck
-print("La soluzione del problema con la Nearest Neighbour è: ", solution)
+print("La soluzione del problema con la Nearest Neighbour è: ")
+for path in solution:
+    print(str(path) + "\n")
 
 
 print_graph_for_debug(solution)
