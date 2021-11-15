@@ -753,7 +753,20 @@ with open('2_OPT_input.txt', 'w') as Two_opt_input:
     json.dump(sol, Two_opt_input)
 cost=compute_solution_cost(dist_truck)
 
-print("La soluzione al problema con L'algoritmo Cheapest Insertion è: ", sol)
+solution_to_print = []
+for element in sol:
+    if element != []:
+        solution_to_print.append(element)
+    else:
+        continue
+print("La soluzione al problema con L'algoritmo Cheapest Insertion è --> ", solution_to_print, "\n")
+for path in solution_to_print:
+    if path == solution_to_print[0]:
+        print("Dove il truck percorre la seguente route --> ", path, "\n")
+    elif path == solution_to_print[1]:
+        print("Mentre il drone percorre le seguenti routes:\n", path)
+    else: 
+        print(path)
 #print("Costo=",cost)
 print_graph_for_debugs(sol)
 

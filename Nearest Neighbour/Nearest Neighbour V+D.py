@@ -370,9 +370,14 @@ cost=compute_solution_cost(visited_list_truck)
 
 print("Nodo di partenza: "+str(starting_node))
 print("Costo: ",cost) #costo Truck
-print("La soluzione del problema con la Nearest Neighbour è: ")
+print("La soluzione del problema con la Nearest Neighbour è --> ", solution, "\n")
 for path in solution:
-    print(str(path) + "\n")
+    if path == solution[0]:
+        print("Dove il truck percorre la seguente route --> ", path, "\n")
+    elif path == solution[1]:
+        print("Mentre il drone percorre le seguenti routes:\n", path)
+    else: 
+        print(path)
 
 
 print_graph_for_debug(solution)
