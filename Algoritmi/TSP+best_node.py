@@ -916,24 +916,3 @@ with open('aaaaa.txt', 'w') as aaa:
 
     sol=population[i]
     #print_graph_for_debug_NEW(solution)
-
-
-
-
-
-
-                
-            
-
-
-
-
-            
-
-
-
-
-
-
-
-
