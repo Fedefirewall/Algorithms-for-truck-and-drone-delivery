@@ -1074,7 +1074,7 @@ drone_capacity=int(drone_capacity)
 
 
 INTERNAL_ITERATIONS=200
-MAX_POPULATION_SIZE=100
+MAX_POPULATION_SIZE=500
 OUTER_ITERATIONS=10
 NODE_PROBABILITY_FOR_MUTATION=0.99
 
@@ -1152,7 +1152,7 @@ if __name__ == '__main__':
         for solution in new_population_dup:
             if not solution_duplicated(population,solution):
                 population.append(solution)    
-        pbar.set_description(str(num_pop)+" Populations Evolving... best cost = "+str(initial_best_cost)+"  pop size: "+str(len(new_population_dup)))
+        pbar.set_description(str(num_pop)+" Populations Evolving... best cost = "+str(minim)+"  pop size: "+str(len(new_population_dup)))
         # print("tra elim e rimoz dup ci ho messo ",time.time()-start1)
 
 

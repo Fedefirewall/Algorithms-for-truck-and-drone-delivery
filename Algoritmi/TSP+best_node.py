@@ -134,7 +134,7 @@ def print_graph_for_debug():
     color_map=[]
     for node in graph_total:
     
-            if (node == truck_node_index): 
+            if (node == starting_node): 
                 color_map.append('red')
             elif (node in visited_list_truck_indexes): 
                 color_map.append('white')

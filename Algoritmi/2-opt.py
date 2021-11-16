@@ -28,7 +28,9 @@ def create_graph(solution):
     graph_drone=graph_drone_clear.copy()
     graphs_couple=[]
     i=0
-    truck_path=solution[0]
+    #dato che ho il nodo viistato 2 volte come codifica
+    truck_path=copy.deepcopy(solution[0])
+    truck_path.pop(-1)
     while i < len(truck_path)-1:
         node1=truck_path[i]
         node2=truck_path[i+1]
@@ -575,6 +577,10 @@ if __name__ == '__main__':
 
     #Scrivo sul file GA_input.txt la popolazione che dovrà andare in pasto all'algoritmo genetico. 
     #prima però rimuovo i nodi del truck doppi
+    population.append(solution)
+    for solution in population:
+        while solution[0][-1]==solution[0][0]:
+            solution[0].pop(-1)
     with open('GA_input.txt', 'w') as GA_input:
         GA_input.writelines(str(starting_node)+"\n")
         GA_input.writelines(str(drone_autonomy)+"\n")
