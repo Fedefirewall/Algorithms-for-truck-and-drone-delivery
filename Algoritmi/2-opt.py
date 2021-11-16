@@ -21,6 +21,7 @@ import multiprocessing, logging
 import copy
 import sys
 
+
 def create_graph(solution):
 
     graph_truck=graph_truck_clear.copy()
@@ -92,6 +93,15 @@ def print_graph_for_debug(solution):
      
     
     plt.show()         # display it interactively 
+
+def compute_solution_cost_by_sol(solution):    
+    cost=0
+    
+    for i in range (len(solution[0])-1):
+        cost+=dist_truck[solution[0][i]][solution[0][i+1]]
+    cost+=dist_truck[solution[0][i+1]][solution[0][0]]
+
+    return cost
 
 def two_opt_drone(node1, node2, node3, node4, d_p, t_p, d_d):
     #Devo controllare i nodi, se nodo1 > nodo3 li devo invertire
@@ -565,10 +575,11 @@ if __name__ == '__main__':
 
 
     #Scrivo sul file GA_input.txt la popolazione che dovrà andare in pasto all'algoritmo genetico. 
+    #prima però rimuovo i nodi del truck doppi
     with open('GA_input.txt', 'w') as GA_input:
         GA_input.writelines(str(starting_node)+"\n")
         GA_input.writelines(str(drone_autonomy)+"\n")
         GA_input.writelines(str(drone_capacity)+"\n")
         json.dump(population, GA_input)
-
+    print("messo da fogli COSTO= ",compute_solution_cost_by_sol(solution))
     print_graph_for_debug(solution)
