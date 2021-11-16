@@ -11,6 +11,7 @@ import numpy as np
 import random
 from tqdm import tqdm
 from statistics import mean
+import json
 
 alpha=100
 beta=-10000
@@ -907,12 +908,37 @@ with open('aaaaa.txt', 'w') as aaa:
     for key, value in results_dic.items():
         aaa.write(str(key)+ " : "+str( value)+"\n")
                 
-    i=0
-    for key, value in results_dic.items():
-        if key==key_migliore:
-            k=i
-            break     
-        i+=1  
+i=0
+for key, value in results_dic.items():
+    if key==key_migliore:
+        k=i
+        break     
+    i+=1  
 
-    sol=population[i]
-    #print_graph_for_debug_NEW(solution)
+sol=population[i]
+#print_graph_for_debug_NEW(solution)
+
+
+with open('2_OPT_input.txt', 'w') as Two_opt_input:
+    Two_opt_input.writelines(str(starting_node)+"\n")
+    Two_opt_input.writelines(str(drone_autonomy)+"\n")
+    Two_opt_input.writelines(str(drone_capacity)+"\n")
+    json.dump(sol, Two_opt_input)
+
+sol_to_print = []
+for element in sol:
+    if element != []:
+        sol_to_print.append(element)
+
+print("L'algoritmo TSP + Best Drone ha trovato la soluzione --> ", sol_to_print, "\n")
+for path in sol:
+    if path == sol[0]:
+        print("Dove il Truck percorre la route --> ", path)
+    elif path == sol[1]:
+        print("Mentre il Drone percorre le seguenti routes:", "\n", path)
+    elif path != []:
+        print(path)
+    else:
+        continue
+
+print_graph_for_debug_NEW(sol)

@@ -10,6 +10,7 @@ from networkx.classes.function import neighbors
 import numpy as np 
 import random
 from tqdm import tqdm
+from statistics import mean
 import json
 
 alpha=100
@@ -243,11 +244,15 @@ def compute_visited_list():
     return visited_list_truck_indexes
 #Ricerca del nodo più vicino 
 
-def nearest_node(neighbors_distance,visited_list_indexes):
+def nearest_node(node_1):
+    neighbors_distance = [0]
+    for node_2 in range(1, client_number_range): 
+        neighbors_distance.append(dist_drone[node_1][node_2])
+
     min_value=10000000
     for i in range(1,len(neighbors_distance)):  
-        #se la distanza non è zero e il nodo non è nella lista dei visitati
-        if(not(i in visited_list_indexes)):
+        #se il nodo é diverso dal nodo di cui cerco i vicini
+        if i != node_1:
             actual_value=neighbors_distance[i]
             actual_index=i
             if(actual_value<min_value):
@@ -271,19 +276,21 @@ def edge_free(solution,node1,node2):
     #non erano entrambi nel truck
     return False
 
-#Funzione che aggiunge il nodo del truck in un ciclo del drone nella posizione tale per cui il nuovo Detour sia minimo
-def add_node_shortest_detour(solution, edges_full, node_input):
+#Funzione che aggiunge il nodo del truck in un ciclo del drone nella posizione tale per cui il nuovo Detour si minimo
+def add_node_shortest_detour(solution, node_input):
 
+    illegal_output_paths_index=[0]
+    drone_paths_counter=len(solution)-1-solution.count([])
+    #se ho tanti path del drone quanti nodi del truck, non posso scegliere un path vuoto come output
+    if len(solution[0])==drone_paths_counter:                       
+        empty_paths_index=[path_index for path_index in range(0,len(solution)) if path_index!=0 and len(solution[path_index])==0]
+        illegal_output_paths_index+=empty_paths_index
+    else:                      
+        pass
     min_path_index=-1
     diff_min=100000000000
     #cerco il posto migliore per inserire il nodo, tale che il detour sia minimo
-    illegal_output_paths_index=[0]
-    #Se l'arco ha due nodi che sono già in ciclo del drone sono "full", per cui illegali 
-    if edges_full=="full":
-        empty_paths_index=[path_index for path_index in range(0,len(solution)) if path_index!=0 and len(solution[path_index])==0]
-        illegal_output_paths_index+=empty_paths_index
-    if edges_full=="free":
-        pass
+
     legal_output_paths_index=[i for i in range(0,len(solution)) if i not in illegal_output_paths_index]
     for path_output_index in legal_output_paths_index:
         path=solution[path_output_index]
@@ -329,21 +336,25 @@ def add_node_shortest_detour(solution, edges_full, node_input):
                 if  actual_weight>drone_capacity:
                     #se aggiungom questo nodo al path , indipendentemente da quale punto lo andrò ad aggiungre, supero la capacità
                     break
-                if (actual_diff<diff_min and (path_output_index==0 or actual_cost<=drone_autonomy)):
+                if (actual_diff<diff_min and actual_cost<=drone_autonomy):
                     diff_min=actual_diff
                     min_path_index=path_output_index
                     min_edge=edge
 
+            
+    
     #se non ho trovato un modo per aggiungere il nodo
     if min_path_index==-1:
         return False
 
     path_output=solution[min_path_index]
-
+    
     #se é un novo path
     if len(min_edge)>2:
         path_output+=[min_edge[0],node_input,min_edge[1]]
-        
+
+
+
     else:
         node_o_1_index=path_output.index(min_edge[0])
         node_o_2_index=path_output.index(min_edge[1])
@@ -355,10 +366,78 @@ def add_node_shortest_detour(solution, edges_full, node_input):
             path_output.insert(node_o_min_index+1,node_input)
 
     return True
+
+def check_node_shortest_detour(solution, node_input):
+    solution_clear=copy.deepcopy(solution)
+    solution_clear[0].remove(node_input)
+    illegal_output_paths_index=[0]
+    drone_paths_counter=len(solution_clear)-1-solution_clear.count([])
+    #se ho tanti path del drone quanti nodi del truck, non posso scegliere un path vuoto come output
+    if len(solution_clear[0])==drone_paths_counter:                       
+        empty_paths_index=[path_index for path_index in range(0,len(solution_clear)) if path_index!=0 and len(solution_clear[path_index])==0]
+        illegal_output_paths_index+=empty_paths_index
+    else:                      
+        pass
+    min_path_index=-1
+    diff_min=100000000000
+    #cerco il posto migliore per inserire il nodo, tale che il detour sia minimo
+
+    legal_output_paths_index=[i for i in range(0,len(solution_clear)) if i not in illegal_output_paths_index]
+    for path_output_index in legal_output_paths_index:
+        path=solution_clear[path_output_index]
+        #se len(path)==0 allora è un nuovo path
+        if len(path)==0:
+            truck_edges=compute_path_edges(solution_clear,0)
+            for edge in truck_edges:
+                node1=edge[0]
+                node2=edge[1]
+                if edge_free(solution_clear,node1,node2):
+                    #and node_degree(solution_clear,node1)<4 and node_degree(solution_clear,node2)<4:
+                    edge=[node1,node2,"New"]
+                    new_edges_cost=(dist_drone[node_input][node1]) + (dist_drone[node_input][node2]) 
+                    #penalizzo la creazione di nuovi path
+                    actual_diff=new_edges_cost+100
+                    actual_cost=new_edges_cost
+                    actual_weight=weights_dict[node_input]
+                    if actual_weight>drone_capacity:
+                        #se aggiungom questo nodo al path , indipendentemente da quale punto lo andrò ad aggiungre, supero la capacità
+                        #sono nel caso inn cui sarebbe l"unico nodo del path, quindi il peso del singolo nodo é maggiore della capacità
+                        break
+                    if (actual_diff<diff_min and actual_cost<=drone_autonomy):  
+                        return True                     
+
+        path_edges=compute_path_edges(solution_clear,path_output_index)
+        #scorro gli archi
+        for edge in path_edges:
+            node1=edge[0]
+            node2=edge[1]
+            #calcolo il costo di questa prova, 
+            #somma dell'arco tra nodo1 nodoX e somma dell' arco tra nodo2 e nodoX
+            #e tolgo l arco rimosso
+            
+            #controllo che i 2 nodi non siamo partenza e arrivo.....MMM? 
+            if((node1 in solution_clear[0] and node2 in solution_clear[0])==False ):
+                new_edges_cost=(dist_drone[node_input][node1]) + (dist_drone[node_input][node2])
+                old_edge_cost=dist_drone[node1][node2]
+                actual_diff=new_edges_cost-old_edge_cost
+                actual_cost=compute_path_drone_cost(path)-old_edge_cost+new_edges_cost
+                actual_weight=compute_drone_weight(path)+weights_dict[node_input]
+                if  actual_weight>drone_capacity:
+                    #se aggiungom questo nodo al path , indipendentemente da quale punto lo andrò ad aggiungre, supero la capacità
+                    break
+                if (actual_diff<diff_min and (path_output_index==0 or actual_cost<=drone_autonomy)):
+                    return True  
+            
     
+    #se non ho trovato un modo per aggiungere il nodo
+    if min_path_index==-1:
+        #print_graph_for_debug_NEW(solution_clear)
+        return False
+    else:
+        return True    
 
 def compute_path_edges(solution,path_index):
-    edges=[]    
+    edges=[]
     path=solution[path_index]
     i=0
     while i < len(path)-1:
@@ -444,15 +523,14 @@ def compute_possible_reunion_nodes(solution,old_reunion_nodes):
     for node in possible_reunion_nodes:
         if node_degree(solution, node)>3:
             possible_reunion_nodes.remove(node)
-    # if len(possible_reunion_nodes)==0:
-    #     print_graph_for_debug_NEW(solution)
+
     return possible_reunion_nodes
 
 def compute_best_reunion(node_start,node_possible,alpha,beta):
     return (dist_drone[node_start][node_possible]*alpha)+(weights_dict[node_possible]*beta)
 
 def concat_drone_paths(solution,node):
-    
+    concatenate_paths=-1
     drone_paths=[path for path in solution if path!=solution[0] and len(path)>0]
 
     paths_to_concat=[path for path in drone_paths if path[0]==node or path[-1]==node]
@@ -533,16 +611,11 @@ def concat_drone_paths(solution,node):
         output=[concatenate_paths,path_to_concat_index_1,path_to_concat_index_2]
         return True,output
 
-#Trova i nodi che possono essere presi dal ciclo del truck
 def compute_legal_inputs_nodes(solution,path_index):
     illegal_inputs_nodes=[starting_node]
     
     path=solution[path_index]
 
-    #se e un path del dronbe
-    if path_index!=0 and len(path)>2:
-        illegal_inputs_nodes.append(path[0])
-        illegal_inputs_nodes.append(path[-1])
     if path_index==0:
         for node in path:
             #il nodod de truck é illegale se ha grado >2 e non posso fondere i 2 cicli che gli arrivano
@@ -550,6 +623,8 @@ def compute_legal_inputs_nodes(solution,path_index):
                 concat_res,out=concat_drone_paths(solution,node)
                 if concat_res==False:
                     illegal_inputs_nodes.append(node)
+            if check_node_shortest_detour(solution,node)==False:
+                illegal_inputs_nodes.append(node)
     
     legal_inputs_nodes=[node for node in path if node not in illegal_inputs_nodes]
     return legal_inputs_nodes
@@ -577,12 +652,14 @@ def find_best_node(solution):
             prev_node=truck_path[node_index-1]
        
         value=(dist_truck[prev_node][node] + dist_truck[next_node][node] - dist_truck[prev_node][next_node])*alpha + weights_dict[node]*beta
-        drone_cost=dist_drone[prev_node][node] + dist_drone[next_node][node]
-        if value>best_value and drone_cost<=drone_autonomy:
+        #controllare se posso aggiungerlo a qualche percorso del drone
+
+        if value>best_value:
             best_value=value
             best_node=node
             best_prev_node=prev_node
             best_next_node=next_node
+
     return best_prev_node, best_node, best_next_node
 
 #Funzione che trova la coppia di nodi tali per cui l'arco sia di costo minimo
@@ -612,7 +689,6 @@ def find_best_edge(graph, dist, trip_number):
                     old_edge_cost=dist[node1][node2]
                     actual_cost=compute_solution_cost(dist)-old_edge_cost+new_edge_cost
 
-
                     if(actual_cost<cost_min):
                         cost_min=actual_cost
                         min_index=actual_index
@@ -632,261 +708,14 @@ def compute_solution_cost_by_sol(solution):
     
     for i in range (len(solution[0])-1):
         cost+=dist_truck[solution[0][i]][solution[0][i+1]]
+        print(dist_truck[solution[0][i]][solution[0][i+1]])
     cost+=dist_truck[solution[0][i+1]][solution[0][0]]
+    print(dist_truck[solution[0][i+1]][solution[0][0]])
 
     return cost
 
-#VARIABILI DRONE
-starting_node = 2
-drone_autonomy = 25
-drone_capacity = 300
-
-#Decido il nodo di partenza, ovvero il nostro deposito. 
-truck_node_index = starting_node
-
-#Dichiaro la lista dei nodi visitati durante l'algoritmo
-visited_list_indexes = [starting_node]
-#Dichiaro la lista dei nodi visitati dal truck durante l'algoritmo
-visited_list_truck_indexes = [starting_node]
-drone_cycle_number=0
-cost = 0    #costo iniziale del veicolo
-drone_on_truck=1
-
-
-visited_list_drone=[]
-truck_locked_edges=[]
-
-# counter per i viaggi dell drone, anche quelli che poi annullo
-drone_trip_counter=0
-
-
-# conto quanti clienti fa il drone
-drone_clients_counter=0
-
-#-------FINE INIZIALIZZAZIONE-------
-
-
-#INIZIO CODICE
-#Creo la lista con le distanze dei vicini
-neighbors_distance = [0]
-for i in range(1, client_number_range): 
-    neighbors_distance.append(dist_drone[truck_node_index][i])
-#Inserisco in nearest_index il nodo più vicino al truck
-nearest_index = nearest_node(neighbors_distance, visited_list_indexes)
-graph_truck.add_edge(truck_node_index,nearest_index,length=round(dist_truck[truck_node_index][nearest_index],2),color='r')
-visited_list_truck_indexes=compute_visited_list_truck()
-visited_list_indexes=compute_visited_list()
-
-#ciclo esterno del truck
-first_time=1
-last_node=0
-
-while(len(visited_list_indexes)<client_number):
-    sub_clients_counter=0
-    drone_returned=False
-    #CHEAPEST INSERTION TRUCK
-    #controllo se il truck può fare solo un nodo: sono gia ad almeno un nodo, quindi aggiungo l arco piu conveniente    
-    best_node_index,node1_best,node2_best=find_best_edge(graph_truck,dist_truck,-1)
-    #print_graph_for_debug()
-    #Ora ho trovato il nodo con detour di costo minimo, e i 2 nodi a cui collegarlo
-    #quindi lo aggiungo e rimuovo l edge corrispondente
-    graph_truck.add_edge(best_node_index,node1_best,length=round(dist_truck[best_node_index][node1_best],2),color='r')
-    graph_truck.add_edge(best_node_index,node2_best,length=round(dist_truck[best_node_index][node2_best],2),color='r')
-    visited_list_indexes.append(best_node_index)
-    visited_list_truck_indexes=compute_visited_list_truck()
-    #rimuovo solo se non sono al 2 ciclo, senno per la storia del undirected eliminerei il primo arco
-    if(len(visited_list_truck_indexes)>3):
-        graph_truck.custom_remove_edge(node1_best,node2_best)
-
-    cost=compute_solution_cost(dist_truck)
-
-
-#creo la soluzione in forma di lista
-#region
-solution=[]
-#Aggiungo alla lista per GA
-truck_path=[]
-nodeA=visited_list_truck_indexes.pop(0)
-truck_path.append(nodeA)
-while(len(visited_list_truck_indexes)>0):
-    nodeA_neighbours=[node2 for node1,node2 in graph_truck.edges() if node1==nodeA and node2 not in truck_path]+[node1 for node1,node2 in graph_truck.edges() if node2==nodeA and node1 not in truck_path]
-    next_node=nodeA_neighbours[0]
-    visited_list_truck_indexes.remove(next_node)
-    truck_path.append(next_node)
-    nodeA=next_node
-
-solution.append(truck_path)
-
-trip_counters=[node.trip_number for node  in visited_list_drone]
-trip_counters=list(set(trip_counters))
-
-
-for trip in trip_counters:
-    drone_path=[]
-    visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==trip]
-    nodeA=visited_list_drone_this_trip.pop(0)
-    drone_path.append(nodeA)
-    while(len(visited_list_drone_this_trip)>0):
-        nodeA_neighbours=[node2 for node1,node2 in graph_drone.edges() if node1==nodeA and node2 in visited_list_drone_this_trip and node2 not in drone_path]+\
-            [node1 for node1,node2 in graph_drone.edges() if node2==nodeA and node1 in visited_list_drone_this_trip and node1 not in drone_path]
-
-        next_node=nodeA_neighbours[0]
-        visited_list_drone_this_trip.remove(next_node)
-        drone_path.append(next_node)
-        nodeA=next_node
-    solution.append(drone_path)
-
-#riempio di spazi vuoti
-while(len(solution)<15):
-    solution.append([])
-#endregion
-cost=compute_solution_cost(dist_truck)
-print("Costo=",cost)
-solution_clear=copy.deepcopy(solution)
-
-inputs=[w/10 for w in range(-200,-10,5)]+\
-       [w/10 for w in range(-10,-5,2)]+\
-       [w/10 for w in range(-5,5,1)]+\
-       [w/10 for w in range(5,10,2)]+\
-       [w/10 for w in range(10,200,5)]
-results_dic={}
-population=[]
-
-ab_list=[]
-for alpha in inputs:
-    for beta in inputs:
-        key1=[alpha,beta]
-        ab_list.append(key1)
-
-desc="Trying different values... alpha="+str(inputs[0])+" beta="+str(inputs[0])+"   "
-desc_len=len(desc)
-pbar=tqdm (ab_list, desc=desc,leave=True,bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}')
-for key in pbar:
-    alpha=key[0]
-    beta=key[1]
-    desc="Trying different values... alpha="+str(alpha)+" beta="+str(beta)+"  "
-    while len(desc)!=desc_len:
-        if len(desc)<desc_len:
-            desc+=" "
-        if len(desc)>desc_len:
-            desc=desc[:-1]
-    pbar.set_description(desc)
-    solution=copy.deepcopy(solution_clear)
-    truck_path=solution[0]
-
-
-    best_node="starting"
-    while best_node!=-1: 
-        prev_node, best_node, next_node = find_best_node(solution)
-        if best_node!=-1:   
-            #print (prev_node, best_node, next_node)
-            node_concat=False
-
-            truck_path.remove(best_node)
-
-            # #guardo se il nodo era usato dal drone equindi devo fondere i path, se no non devo farlo
-            # graph_total = nx.compose(graph_truck,graph_drone)
-            if(node_degree(solution,best_node)>0):
-                
-                node_concat=True
-                #sistemo i path del drone
-                #print_graph_for_debug(solution)
-                res,concat_output=concat_drone_paths(solution,best_node)
-                if concat_output==False:
-                    print_graph_for_debug_NEW(solution)
-                first_path_index=concat_output[1]
-                second_path_index=concat_output[2]
-                total_path=concat_output[0]
-
-                solution[first_path_index]=total_path
-                
-                # se l indice é -1 signifche cge non ho concatenato 2 path, ma un path(first path) con un nuvo arco
-                if second_path_index!=-1:
-                    solution[second_path_index].clear()
-                
-            
-            #se aggiungessi nel miglior modo il nodo ed avevo concatenato, lo troverei visitato 2 volte
-            if(node_concat==False):
-
-                drone_paths_counter=len(solution)-1-solution.count([])
-                #se ho tanti path del drone quanti nodi del truck, non posso scegliere un path vuoto come output
-                if len(solution[0])==drone_paths_counter:
-                    
-                    add_node_shortest_detour(solution, "full", best_node)
-
-                else:
-                    
-                    add_node_shortest_detour(solution, "free", best_node)
-
-
-        
-        cost=compute_solution_cost_by_sol(solution)
-        #print("Costo=",cost)
-        key=str(alpha)+" & "+str(beta)
-        results_dic[key]=cost
-        # print("Nodo iniziale=",starting_node)
-        # print("Autonomia drone", drone_autonomy)
-        # print("Capacita", drone_capacity)             
-
-        #print_graph_for_debug_NEW(solution)   
-        population.append(solution)
-
-key_migliore=min(results_dic, key = lambda k: results_dic[k])
-migliore_valore=results_dic[key_migliore]
-print(key_migliore,"ha dato un costo di",migliore_valore)
-
-with open('aaaaa.txt', 'w') as aaa:
-    for key, value in results_dic.items():
-        aaa.write(str(key)+ " : "+str( value)+"\n")
-            
-i=0
-for key, value in results_dic.items():
-    if key==key_migliore:
-        k=i
-        break     
-    i+=1  
-
-sol=population[i]
-
-with open('2_OPT_input.txt', 'w') as Two_opt_input:
-    Two_opt_input.writelines(str(starting_node)+"\n")
-    Two_opt_input.writelines(str(drone_autonomy)+"\n")
-    Two_opt_input.writelines(str(drone_capacity)+"\n")
-    json.dump(sol, Two_opt_input)
-
-sol_to_print = []
-for element in sol:
-    if element != []:
-        sol_to_print.append(element)
-
-print("L'algoritmo TSP + Best Drone ha trovato la soluzione --> ", sol_to_print, "\n")
-for path in sol:
-    if path == sol[0]:
-        print("Dove il Truck percorre la route --> ", path)
-    elif path == sol[1]:
-        print("Mentre il Drone percorre le seguenti routes:", "\n", path)
-    elif path != []:
-        print(path)
-    else:
-        continue
+sol=[[1, 30, 12, 24, 29, 8, 16, 22, 4, 3, 19], [24, 20, 27, 29], [8, 2, 21, 11, 16], [4, 23, 17, 9, 3], [16, 5, 7, 25, 6, 22], [19, 10, 18, 28, 26, 15, 1], [30, 13, 14, 12], [], [], [], [], [], [], [], []]
+cost=compute_solution_cost_by_sol(sol)
+print(cost)
 
 print_graph_for_debug_NEW(sol)
-
-
-
-
-                
-            
-
-
-
-
-            
-
-
-
-
-
-
-
-
