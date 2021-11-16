@@ -10,6 +10,7 @@ from networkx.classes.function import neighbors
 import numpy as np 
 import random
 from tqdm import tqdm
+import json
 
 alpha=100
 beta=-10000
@@ -277,6 +278,7 @@ def add_node_shortest_detour(solution, edges_full, node_input):
     diff_min=100000000000
     #cerco il posto migliore per inserire il nodo, tale che il detour sia minimo
     illegal_output_paths_index=[0]
+    #Se l'arco ha due nodi che sono già in ciclo del drone sono "full", per cui illegali 
     if edges_full=="full":
         empty_paths_index=[path_index for path_index in range(0,len(solution)) if path_index!=0 and len(solution[path_index])==0]
         illegal_output_paths_index+=empty_paths_index
@@ -531,6 +533,7 @@ def concat_drone_paths(solution,node):
         output=[concatenate_paths,path_to_concat_index_1,path_to_concat_index_2]
         return True,output
 
+#Trova i nodi che possono essere presi dal ciclo del truck
 def compute_legal_inputs_nodes(solution,path_index):
     illegal_inputs_nodes=[starting_node]
     
@@ -844,6 +847,13 @@ for key, value in results_dic.items():
     i+=1  
 
 sol=population[i]
+
+with open('2_OPT_input.txt', 'w') as Two_opt_input:
+    Two_opt_input.writelines(str(starting_node)+"\n")
+    Two_opt_input.writelines(str(drone_autonomy)+"\n")
+    Two_opt_input.writelines(str(drone_capacity)+"\n")
+    json.dump(sol, Two_opt_input)
+
 sol_to_print = []
 for element in sol:
     if element != []:
