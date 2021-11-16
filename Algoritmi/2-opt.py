@@ -428,7 +428,8 @@ for i in range(1, len(population_dup)):
     else:
         continue
 
-truck_path.append(truck_path[0])
+if truck_path[-1] != truck_path[0]:
+    truck_path.append(truck_path[0])
 cost_truck_best = 0
 for j in range(0, len(truck_path) -1):
     nodo1 = truck_path[j]
