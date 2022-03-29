@@ -310,7 +310,7 @@ def drone_Cheapest_trip():
 
                     cost=compute_drone_cost_new(drone_trip_counter)
                     weight=compute_drone_weight(drone_trip_counter)
-            #controllo lo score slo se la path ha + di 2 nodi
+            #controllo lo score solo se la path ha + di 2 nodi
             visited_list_drone_this_trip=[node.index for node in visited_list_drone if node.trip_number==drone_trip_counter]
             if(len(visited_list_drone_this_trip)>2):
                
