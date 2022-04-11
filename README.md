@@ -2,8 +2,8 @@
 Project in python resolving the truck and single drone delivery.
 
 <h1><strong>The problem</strong></h1>
-Given a list of clients (Posizioni_clienti.txt) where each line represent a package instruction in this form: _NUMBER X_COORDINATE Y_COORDINATE WEIGHT_ 
-we want to create a solution that minimize the distance traveled by the truck (minimize the sum of the arcs).
+Given a list of clients (Posizioni_clienti.txt) where each line represent a package instruction in this form: _NUMBER X\_COORDINATE Y\_COORDINATE WEIGHT_ 
+we want to create a solution that minimize the distance traveled by the truck (minimize the sum of the arcs), while not exceeding the drone autonomy nor the max weigth for each trip.
 In a file called _Distanze_TRUCK.txt_ we have all the distances between the clients (nodes), 
 to which it was added a random value to simulate the longer distance traveling by road vs as the crow flies
 
