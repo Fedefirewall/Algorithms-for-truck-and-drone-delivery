@@ -40,6 +40,7 @@ This solution suppose:
 
 <h3><strong>Improvement:</strong> we start from a correct solution and try to improve it</h3>
 <strong>Genetic algorithm:</strong> given some different solutions, we create childs and evalute the fitness to choose the best parents
+<strong>2-OPT:</strong> 
 
 
 
