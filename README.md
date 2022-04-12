@@ -3,10 +3,21 @@ Project in python resolving the truck and single drone delivery.
 
 <h1><strong>The problem</strong></h1>
 Given a list of clients (Posizioni_clienti.txt) where each line represent a package instruction in this form: _NUMBER X\_COORDINATE Y\_COORDINATE WEIGHT_ 
-we want to create a solution that minimize the distance traveled by the truck (minimize the sum of the arcs), while not exceeding the drone autonomy nor the max weigth for each trip.
+we want to create a solution that minimize the distance traveled by the truck (minimize the sum of the arcs), while not exceeding the drone autonomy nor the max weigth for each trip.      
+
+For example the first 3 nodes/clients are  
+
+| Number | X\_COORDINATE | Y\_COORDINATE | WEIGHT |
+| ------ | ------------- | ------------- | ----- |
+| 01 | 10 | 21 | 16 |
+| 02 | 22 | 18 | 82 |
+| 03 | 7 | 7 | 76 | 
+
 
 In a file called _Distanze_TRUCK.txt_ we have all the distances between the clients (nodes), 
-to which it was added a random value to simulate the longer distance traveling by road vs as the crow flies
+to which it was added a random value to simulate the longer distance traveling by road vs as the crow flies.\
+This file is a matrix _nxn_ where _n_ is the number of nodes, and the value at position i,j is the distance between node i and node j
+
 
 This solution suppose:
 - 1 truck and 1 drone
@@ -14,6 +25,7 @@ This solution suppose:
 - No autonomy decay due to weight (Drone)
 - Can transport infinite numbers of pacakages, the only limit is the weight (Drone)
 - Bascially all interactions are instant, except for the movements of the truck and the drone
+***
 
 <h2><strong> Algorithms</strong></h2>
 <h3><strong>Construction:</strong> We start from zero to build a solution</h3>
