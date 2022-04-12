@@ -28,6 +28,7 @@ This solution suppose:
 ***
 
 ## Algorithms
+There are 2 algorithm types:
 #### **Construction**: <font size="4"><strong>We start from zero to build a solution</strong></font>
 - <strong>Nearest Neighbour V+D.py:</strong> simply find the closest node, send the drone and repeat, when the drone cant reach the next node, we send there the truck.   
 
