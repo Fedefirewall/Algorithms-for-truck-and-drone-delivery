@@ -27,22 +27,16 @@ This solution suppose:
 - Bascially all interactions are instant, except for the movements of the truck and the drone
 ***
 
-<h2><strong> Algorithms</strong></h2>
-<h3><strong>Construction:</strong> We start from zero to build a solution</h3>
-<strong>Nearest Neighbour V+D.py:</strong> simply find the closest node, send the drone and repeat, when the drone cant reach the next node, we send there the truck.    
+## Algorithms
+#### **Construction**: <font size="4"><strong>We start from zero to build a solution</strong></font>
+- <strong>Nearest Neighbour V+D.py:</strong> simply find the closest node, send the drone and repeat, when the drone cant reach the next node, we send there the truck.   
 
+- <strong>Cheapest Insertion V+D (strada+clienti).py:</strong> First we add nodes to the drone path using the cheapest insertion rule (until it has enough autonomy),  then we add the next best node to the truck path. we choose the best drone trip using the formula trip_score=(len(visited_list_drone_this_trip))+(cost*alpha)+(weight*beta), with differents alpha and beta
 
-<Strong>Cheapest Insertion V+D (strada+clienti).py:</strong> First we add nodes to the drone path using the cheapest insertion rule (until it has enough autonomy), 
-                                            then we add the next best node to the truck path. we choose the best drone trip using the formula 
-                                            trip_score=(len(visited_list_drone_this_trip))+(cost*alpha)+(weight*beta), with differents alpha and beta
-                                            
-<strong>TSP+best_node.py:</strong> First we create a path for the truck with all nodes, then we remove one node at a time and try to insert in a drone trip in the best way way possible
+- <strong>TSP+best_node.py:</strong> First we create a path for the truck with all nodes, then we remove one node at a time and try to insert in a drone trip in the best way way possible
 
+#### Improvement: <font size="4"><strong>we start from a correct solution and try to improve it</strong></font>
+- <strong>Genetic algorithm:</strong> given some different solutions, we create childs and evalute the fitness to choose the best parents    
 
-<h3><strong>Improvement:</strong> we start from a correct solution and try to improve it</h3>
-<strong>Genetic algorithm:</strong> given some different solutions, we create childs and evalute the fitness to choose the best parents    
-
-<strong>2-OPT:</strong> 
-
-
+- <strong>2-OPT.py:</strong> 
 
