@@ -29,7 +29,8 @@ This solution suppose:
 
 <h2><strong> Algorithms</strong></h2>
 <h3><strong>Construction:</strong> We start from zero to build a solution</h3>
-<strong>Nearest Neighbour V+D.py:</strong> simply find the closest node, send the drone and repeat, when the drone cant reach the next node, we send there the truck
+<strong>Nearest Neighbour V+D.py:</strong> simply find the closest node, send the drone and repeat, when the drone cant reach the next node, we send there the truck.    
+
 
 <Strong>Cheapest Insertion V+D (strada+clienti).py:</strong> First we add nodes to the drone path using the cheapest insertion rule (until it has enough autonomy), 
                                             then we add the next best node to the truck path. we choose the best drone trip using the formula 
@@ -39,7 +40,8 @@ This solution suppose:
 
 
 <h3><strong>Improvement:</strong> we start from a correct solution and try to improve it</h3>
-<strong>Genetic algorithm:</strong> given some different solutions, we create childs and evalute the fitness to choose the best parents
+<strong>Genetic algorithm:</strong> given some different solutions, we create childs and evalute the fitness to choose the best parents    
+
 <strong>2-OPT:</strong> 
 
 
